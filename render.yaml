@@ -83,7 +83,6 @@ services:
   - type: web
     runtime: static
     name: velvetnoise-frontend
-    plan: free
     buildCommand: cd frontend && npm ci && npm run build
     staticPublishPath: ./frontend/dist
     envVars:
