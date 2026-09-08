@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-white text-velvet-black antialiased font-body font-normal;
+}
+
+::selection {
+  @apply bg-velvet-burgundy text-velvet-silk;
+}
+
+/* Grano sutil sobre fondos planos (manual de marca, cap. 10 "Elementos
+   gráficos" — ruido fino 4-8% de opacidad). Se aplica con la clase
+   .velvet-grain en vez de repetir el degradé/filtro en cada componente. */
+.velvet-grain {
+  position: relative;
+  isolation: isolate;
+}
+.velvet-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+}

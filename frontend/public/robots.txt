@@ -1,0 +1,14 @@
+# Velvet Noise — robots.txt (Fase 16)
+# El panel administrativo también se marca "noindex" página por página (ver
+# frontend/src/layouts/AdminLayout.tsx) — esta regla es una segunda capa,
+# no la única, ya que un robots.txt por sí solo no impide que una URL ya
+# indexada por otro medio siga apareciendo (para eso sirve el meta noindex).
+User-agent: *
+Disallow: /admin
+Disallow: /checkout
+Disallow: /cart
+Disallow: /orders
+Disallow: /profile
+Allow: /
+
+Sitemap: https://velvetnoise.example.com/sitemap.xml

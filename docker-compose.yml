@@ -1,0 +1,76 @@
+# Despliegue completo con Docker Compose: Postgres + backend + frontend en
+# un solo comando. Pensado para un VPS/servidor propio; en una plataforma
+# gestionada (Railway, Render, Vercel, Neon...) normalmente no hace falta
+# este archivo — ver docs/04-despliegue.md para ambas opciones.
+#
+# Uso:
+#   cp .env.example .env   # completa los valores (ver docs/04-despliegue.md)
+#   docker compose up -d --build
+#
+# database/docker-compose.yml es un archivo aparte, más simple, que SOLO
+# levanta Postgres (+ Adminer) para desarrollo local sin Docker en
+# backend/frontend — este archivo de la raíz es el que arma la pila
+# completa para producción/staging.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tiendavirtual_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-tienda_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tienda_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-tienda_virtual}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-tienda_user} -d ${POSTGRES_DB:-tienda_virtual}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - tiendavirtual
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tiendavirtual_backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Dentro de la red de Docker, el backend se conecta a Postgres por el
+      # nombre del servicio, no por localhost — se sobreescribe aquí para
+      # no depender de que el .env traiga el host correcto.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-tienda_user}:${POSTGRES_PASSWORD:-tienda_pass}@postgres:5432/${POSTGRES_DB:-tienda_virtual}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    networks:
+      - tiendavirtual
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:4000/api}
+        VITE_WOMPI_PUBLIC_KEY: ${VITE_WOMPI_PUBLIC_KEY:-}
+    container_name: tiendavirtual_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "8081:80"
+    networks:
+      - tiendavirtual
+
+networks:
+  tiendavirtual:
+    driver: bridge
+
+volumes:
+  pgdata:

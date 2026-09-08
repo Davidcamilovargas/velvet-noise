@@ -1,0 +1,191 @@
+# CI: lint + test + build para backend y frontend (Fase 17, ver
+# docs/01-arquitectura.md sección 10 y docs/04-despliegue.md).
+#
+# El backend corre su suite de integración contra un Postgres real (nunca
+# contra mocks — mismo criterio que el resto del proyecto), levantado como
+# "service container" de este mismo job.
+
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  backend:
+    name: Backend — lint, tsc, tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: tienda_user
+          POSTGRES_PASSWORD: tienda_pass
+          POSTGRES_DB: tienda_virtual_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tienda_user -d tienda_virtual_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://tienda_user:tienda_pass@localhost:5432/tienda_virtual_test
+      JWT_ACCESS_SECRET: ci-test-access-secret-not-for-production
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-not-for-production
+      COOKIE_SECRET: ci-test-cookie-secret-not-for-production
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npx tsc -b --noEmit
+
+      - name: Aplicar migraciones
+        run: npm run db:migrate
+
+      - name: Tests (Vitest + Supertest contra Postgres real)
+        run: npm test
+
+      - name: Build (tsc -> dist)
+        run: npm run build
+
+  frontend:
+    name: Frontend — lint, tsc, tests, build
+    runs-on: ubuntu-latest
+    env:
+      VITE_API_URL: http://localhost:4000/api
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npx tsc -b --noEmit
+
+      - name: Tests unitarios/componentes (Vitest)
+        run: npm test
+
+      - name: Build (tsc + vite build)
+        run: npm run build
+
+  e2e:
+    name: E2E — Playwright contra la app completa
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: tienda_user
+          POSTGRES_PASSWORD: tienda_pass
+          POSTGRES_DB: tienda_virtual_e2e
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tienda_user -d tienda_virtual_e2e"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://tienda_user:tienda_pass@localhost:5432/tienda_virtual_e2e
+      JWT_ACCESS_SECRET: ci-test-access-secret-not-for-production
+      JWT_REFRESH_SECRET: ci-test-refresh-secret-not-for-production
+      COOKIE_SECRET: ci-test-cookie-secret-not-for-production
+      CORS_ALLOWED_ORIGINS: http://localhost:5173
+      FRONTEND_URL: http://localhost:5173
+      # La suite E2E registra/inicia sesión repetidamente desde una sola IP
+      # (runner de CI) — sube los límites de auth solo para este job, igual
+      # que en el entorno de desarrollo (ver docs/03-api.md, Fase 15).
+      AUTH_RATE_LIMIT_MAX: "200"
+      GLOBAL_RATE_LIMIT_MAX: "5000"
+      VITE_API_URL: http://localhost:4000/api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Instalar dependencias (backend)
+        working-directory: backend
+        run: npm ci
+
+      - name: Instalar dependencias (frontend)
+        working-directory: frontend
+        run: npm ci
+
+      - name: Instalar navegadores de Playwright
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Aplicar migraciones
+        working-directory: backend
+        run: npm run db:migrate
+
+      - name: Arrancar backend en segundo plano
+        working-directory: backend
+        run: npx ts-node --transpile-only src/server.ts &
+
+      - name: Arrancar frontend en segundo plano
+        working-directory: frontend
+        run: npm run dev &
+
+      - name: Esperar a que ambos respondan
+        run: |
+          for url in http://localhost:4000/api/health http://localhost:5173; do
+            echo "Esperando $url..."
+            for i in $(seq 1 30); do
+              if curl -sf "$url" > /dev/null; then
+                echo "$url respondió."
+                break
+              fi
+              if [ "$i" -eq 30 ]; then
+                echo "$url no respondió tras 60s." >&2
+                exit 1
+              fi
+              sleep 2
+            done
+          done
+
+      - name: Playwright E2E
+        working-directory: frontend
+        run: npm run test:e2e
+
+      - name: Subir reporte de Playwright si falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: frontend/playwright-report/
+          retention-days: 7

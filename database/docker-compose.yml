@@ -1,0 +1,38 @@
+version: "3.9"
+
+# Levanta PostgreSQL para desarrollo local.
+# Uso:
+#   cd database && docker compose up -d
+# La URL resultante coincide con DATABASE_URL en .env.example.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: tiendavirtual_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: tienda_user
+      POSTGRES_PASSWORD: tienda_pass
+      POSTGRES_DB: tienda_virtual
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U tienda_user -d tienda_virtual"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Interfaz web opcional para inspeccionar la base de datos en desarrollo.
+  adminer:
+    image: adminer:latest
+    container_name: tiendavirtual_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+
+volumes:
+  pgdata:

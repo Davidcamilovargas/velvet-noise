@@ -1,0 +1,101 @@
+# Blueprint de despliegue para Render (https://render.com).
+#
+# Crea 2 servicios en un solo clic desde el dashboard de Render → "New +" →
+# "Blueprint": el backend (Docker, usa backend/Dockerfile) y el frontend
+# (sitio estático, build de Vite). Ver docs/06-guia-despliegue-online.md
+# para el paso a paso completo con capturas de dónde hacer clic.
+#
+# La base de datos NO se crea aquí a propósito: el Postgres gratuito de
+# Render expira a los 30 días (no sirve para un link "permanente"). En su
+# lugar se usa un Postgres externo gratuito y sin expiración — Neon
+# (recomendado) o Supabase — y su DATABASE_URL se pega a mano la primera
+# vez que Render pide las variables marcadas "sync: false" abajo.
+#
+# Las URLs de FRONTEND_URL / API_BASE_URL / CORS_ALLOWED_ORIGINS / VITE_API_URL
+# ya vienen prellenadas asumiendo que los nombres de servicio de abajo
+# (velvetnoise-backend / velvetnoise-frontend) queden libres en
+# onrender.com. Si Render les agrega un sufijo porque el nombre ya estaba
+# tomado, hay que corregir esas 4 variables con la URL real después del
+# primer deploy (el mismo paso que ya describe docs/04-despliegue.md,
+# sección 3, para cualquier plataforma gestionada).
+
+services:
+  - type: web
+    runtime: docker
+    name: velvetnoise-backend
+    plan: free
+    region: oregon
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "4000"
+
+      # Pega aquí la connection string de Neon/Supabase (Postgres 16+).
+      - key: DATABASE_URL
+        sync: false
+
+      # Render genera valores aleatorios seguros automáticamente — no hay
+      # que escribir nada en estos tres.
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: COOKIE_SECRET
+        generateValue: true
+
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 30d
+
+      # Prellenadas con la URL esperada del servicio frontend de este mismo
+      # blueprint (ver nota arriba).
+      - key: FRONTEND_URL
+        value: https://velvetnoise-frontend.onrender.com
+      - key: API_BASE_URL
+        value: https://velvetnoise-backend.onrender.com
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://velvetnoise-frontend.onrender.com
+
+      # Opcionales — déjalas vacías para una demo (catálogo, carrito y
+      # checkout funcionan igual; solo no habrá pagos reales ni correos
+      # transaccionales). Complétalas más adelante si quieres probar Wompi
+      # o Resend de verdad — ver docs/04-despliegue.md, sección 1.
+      - key: WOMPI_PUBLIC_KEY
+        sync: false
+      - key: WOMPI_PRIVATE_KEY
+        sync: false
+      - key: WOMPI_EVENTS_SECRET
+        sync: false
+      - key: WOMPI_INTEGRITY_SECRET
+        sync: false
+      - key: WOMPI_API_URL
+        value: https://sandbox.wompi.co/v1
+      - key: EMAIL_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
+
+  - type: web
+    runtime: static
+    name: velvetnoise-frontend
+    plan: free
+    buildCommand: cd frontend && npm ci && npm run build
+    staticPublishPath: ./frontend/dist
+    envVars:
+      # Prellenada con la URL esperada del backend de este mismo blueprint.
+      - key: VITE_API_URL
+        value: https://velvetnoise-backend.onrender.com/api
+      # Opcional — déjala vacía para una demo (ver nota de WOMPI_* arriba).
+      - key: VITE_WOMPI_PUBLIC_KEY
+        sync: false
+    routes:
+      # SPA routing: cualquier ruta que no sea un archivo real cae en
+      # index.html, para que /shop/producto-x funcione al recargar.
+      - type: rewrite
+        source: /*
+        destination: /index.html

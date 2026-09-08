@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788793573461,
+      "tag": "0000_bouncy_shocker",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788796510768,
+      "tag": "0001_thin_william_stryker",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788815954694,
+      "tag": "0002_rainy_marten_broadcloak",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788872513546,
+      "tag": "0003_rebrand_velvet_noise_default_store_name",
+      "breakpoints": true
+    }
+  ]
+}

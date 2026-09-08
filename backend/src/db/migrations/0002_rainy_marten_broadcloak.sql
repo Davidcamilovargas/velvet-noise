@@ -1,0 +1,1 @@
+CREATE INDEX "products_category_active_idx" ON "products" USING btree ("category_id","is_active");
