@@ -23,6 +23,7 @@ export function Header() {
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
   const [shopMenuOpen, setShopMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { user, logout } = useAuth();
@@ -68,6 +69,16 @@ export function Header() {
 
       <div className="border-b border-velvet-black/10">
         <div className="mx-auto flex max-w-7xl items-center gap-6 px-4 py-4 sm:px-6 lg:px-8">
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen((o) => !o)}
+            aria-label={mobileMenuOpen ? "Cerrar menú" : "Abrir menú"}
+            aria-expanded={mobileMenuOpen}
+            className="text-velvet-black md:hidden"
+          >
+            {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
+          </button>
+
           <Link to="/" className="flex shrink-0 items-center gap-2.5" aria-label="Velvet Noise — inicio">
             <img src="/brand/logo-isotipo-black.png" alt="" aria-hidden className="h-7 w-auto" />
             <span className="font-display text-lg tracking-wide text-velvet-black">
@@ -200,6 +211,48 @@ export function Header() {
           </div>
         </div>
       </div>
+
+      {mobileMenuOpen && (
+        <nav
+          aria-label="Navegación"
+          className="border-b border-velvet-black/10 bg-white px-4 py-5 sm:px-6 md:hidden"
+        >
+          <span className="text-[11px] font-semibold uppercase tracking-label text-velvet-ash">Categorías</span>
+          <ul className="mt-3 space-y-3">
+            {categories.map((category) => (
+              <li key={category.id}>
+                <Link
+                  to={`/shop?category=${category.slug}`}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="text-sm text-velvet-black"
+                >
+                  {category.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <Link
+            to="/shop"
+            onClick={() => setMobileMenuOpen(false)}
+            className="mt-4 inline-block text-xs font-semibold uppercase tracking-label text-velvet-black underline decoration-velvet-black/30 underline-offset-4"
+          >
+            Ver todo el catálogo
+          </Link>
+
+          <div className="mt-6 space-y-3 border-t border-velvet-black/10 pt-5">
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.label}
+                to={link.to}
+                onClick={() => setMobileMenuOpen(false)}
+                className="block text-xs font-semibold uppercase tracking-label text-velvet-black/80"
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        </nav>
+      )}
     </header>
   );
 }
@@ -213,6 +266,22 @@ function CartIcon() {
         strokeWidth={1.6}
         d="M2.25 3h1.386c.51 0 .955.343 1.087.836l.383 1.437M7.5 14.25a3 3 0 00-3 3h15.75m-12.75-3h11.218c1.121-2.3 1.72-4.708 1.972-6.243.096-.586-.393-1.007-.985-1.007H5.106M7.5 14.25L5.106 5.243M7.5 14.25l-1.5 6M17.25 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM9 20.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0z"
       />
+    </svg>
+  );
+}
+
+function MenuIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="h-5 w-5">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M3.75 6.75h16.5M3.75 12h16.5M3.75 17.25h16.5" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="h-5 w-5">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M6 18L18 6M6 6l12 12" />
     </svg>
   );
 }
