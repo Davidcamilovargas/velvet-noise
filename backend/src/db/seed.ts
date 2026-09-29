@@ -267,11 +267,11 @@ const CATALOG: SeedCategory[] = [
         compareAtPrice: 199000,
         stock: 0,
         images: [
-           "/productos/pantalones/PAR1/jean-recto-crudo.jpg",
-           "/productos/pantalones/PAR1/jean-recto-crudo-2.jpg",
-            "/productos/pantalones/PAR1/jean-recto-crudo-3.jpg",
-            "/productos/pantalones/PAR1/jean-recto-crudo-4.jpg",
-        ],
+           "/product/pantalones/PAR1/jean-recto-crudo.jpg",
+           "/product/pantalones/PAR1/jean-recto-crudo-2.jpg",
+            "/product/pantalones/PAR1/jean-recto-crudo-3.jpg",
+            "/product/pantalones/PAR1/jean-recto-crudo-4.jpg",
+       ],
         variants: [
           { size: "30", stock: 5 },
           { size: "32", stock: 7 },
