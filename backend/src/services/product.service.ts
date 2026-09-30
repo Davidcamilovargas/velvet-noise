@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { db } from "../db/client";
-import { products, productImages, productVariants, inventory, categories } from "../db/schema";
+import { products, productImages, productVariants, inventory, categories, productView360Frames } from "../db/schema";
 import { slugify } from "../utils/slugify";
 import { AppError } from "../utils/AppError";
 import type { CreateProductInput, UpdateProductInput, ListProductsQuery } from "../validators/product.validators";
@@ -51,11 +51,14 @@ async function attachRelations(productRows: (typeof products.$inferSelect)[]) {
   const ids = productRows.map((p) => p.id);
   const categoryIds = [...new Set(productRows.map((p) => p.categoryId))];
 
-  const [images, variants, inventoryRows, categoryRows] = await Promise.all([
+  const [images, variants, inventoryRows, categoryRows, view360Frames] = await Promise.all([
     db.select().from(productImages).where(inArray(productImages.productId, ids)),
     db.select().from(productVariants).where(inArray(productVariants.productId, ids)),
     db.select().from(inventory).where(inArray(inventory.productId, ids)),
     db.select().from(categories).where(inArray(categories.id, categoryIds)),
+    // AGREGADO: frames del visor 360° interactivo, para que la ficha de
+    // producto en el frontend sepa si hay una vista 360° disponible.
+    db.select().from(productView360Frames).where(inArray(productView360Frames.productId, ids)),
   ]);
 
   const stockByVariant = new Map(inventoryRows.map((i) => [i.variantId, i.stock]));
@@ -70,6 +73,9 @@ async function attachRelations(productRows: (typeof products.$inferSelect)[]) {
       ...p,
       category: categoryById.get(p.categoryId),
       images: images.filter((i) => i.productId === p.id).sort((a, b) => a.position - b.position),
+      view360Frames: view360Frames
+        .filter((f) => f.productId === p.id)
+        .sort((a, b) => a.frameIndex - b.frameIndex),
       variants: productVariantsList,
       stock: totalStock,
     };
@@ -249,23 +255,54 @@ export async function updateProduct(id: string, input: UpdateProductInput) {
 
   const slug = input.name && input.name !== existing.name ? await uniqueSlug(input.name, id) : undefined;
 
-  await db
-    .update(products)
-    .set({
-      ...(input.name !== undefined ? { name: input.name } : {}),
-      ...(slug ? { slug } : {}),
-      ...(input.description !== undefined ? { description: input.description } : {}),
-      ...(input.price !== undefined ? { price: money(input.price) } : {}),
-      ...(input.compareAtPrice !== undefined ? { compareAtPrice: input.compareAtPrice != null ? money(input.compareAtPrice) : null } : {}),
-      ...(input.categoryId !== undefined ? { categoryId: input.categoryId } : {}),
-      ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
-      ...(input.isFeatured !== undefined ? { isFeatured: input.isFeatured } : {}),
-      ...(input.weightKg !== undefined ? { weightKg: input.weightKg?.toFixed(3) ?? null } : {}),
-      ...(input.lengthCm !== undefined ? { lengthCm: input.lengthCm?.toFixed(2) ?? null } : {}),
-      ...(input.widthCm !== undefined ? { widthCm: input.widthCm?.toFixed(2) ?? null } : {}),
-      ...(input.heightCm !== undefined ? { heightCm: input.heightCm?.toFixed(2) ?? null } : {}),
-    })
-    .where(eq(products.id, id));
+  // CORREGIDO: esta función nunca tocaba `input.images` — el panel de admin
+  // podía mandar fotos nuevas/editadas y quedaban guardadas solo en la
+  // respuesta, nunca en la base de datos. Ahora, si el request incluyó
+  // "images" (aunque sea un array vacío — eso significa "dejar el producto
+  // sin fotos"), se reemplaza la galería completa dentro de la misma
+  // transacción que el resto de la actualización.
+  await db.transaction(async (tx) => {
+    await tx
+      .update(products)
+      .set({
+        ...(input.name !== undefined ? { name: input.name } : {}),
+        ...(slug ? { slug } : {}),
+        ...(input.description !== undefined ? { description: input.description } : {}),
+        ...(input.price !== undefined ? { price: money(input.price) } : {}),
+        ...(input.compareAtPrice !== undefined ? { compareAtPrice: input.compareAtPrice != null ? money(input.compareAtPrice) : null } : {}),
+        ...(input.categoryId !== undefined ? { categoryId: input.categoryId } : {}),
+        ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
+        ...(input.isFeatured !== undefined ? { isFeatured: input.isFeatured } : {}),
+        ...(input.weightKg !== undefined ? { weightKg: input.weightKg?.toFixed(3) ?? null } : {}),
+        ...(input.lengthCm !== undefined ? { lengthCm: input.lengthCm?.toFixed(2) ?? null } : {}),
+        ...(input.widthCm !== undefined ? { widthCm: input.widthCm?.toFixed(2) ?? null } : {}),
+        ...(input.heightCm !== undefined ? { heightCm: input.heightCm?.toFixed(2) ?? null } : {}),
+      })
+      .where(eq(products.id, id));
+
+    if (input.images !== undefined) {
+      // Nota: esto reemplaza SOLO las fotos que llegan como URL/imageSchema
+      // (el flujo antiguo de "pegar un link"). Las fotos subidas como
+      // archivo real (Cloudinary, vía upload.service.ts) se agregan/borran
+      // con sus propios endpoints dedicados y no pasan por aquí, así que
+      // nunca se pisan entre sí — pero si el admin edita el producto justo
+      // después de subir archivos reales, hay que asegurarse de que el
+      // formulario también incluya esas fotos ya subidas en `images` para
+      // no perderlas (ver Products.tsx).
+      await tx.delete(productImages).where(eq(productImages.productId, id));
+      if (input.images.length > 0) {
+        await tx.insert(productImages).values(
+          input.images.map((img, index) => ({
+            productId: id,
+            url: img.url,
+            altText: img.altText,
+            position: index,
+            isPrimary: img.isPrimary ?? index === 0,
+          }))
+        );
+      }
+    }
+  });
 
   return getProductByIdOrSlug(id, { includeInactive: true });
 }

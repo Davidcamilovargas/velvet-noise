@@ -11,6 +11,7 @@ import { useSEO } from "../hooks/useSEO";
 import { Button } from "../components/ui/Button";
 import { Alert } from "../components/ui/Alert";
 import { ProductCard } from "../components/product/ProductCard";
+import { Product360Viewer } from "../components/product/Product360Viewer";
 import { EmptyState } from "../components/ui/EmptyState";
 
 type ProductWithRelated = Product & { relatedProducts: Product[] };
@@ -207,16 +208,32 @@ export default function ProductDetail() {
         {/* GALERÍA — grid de imágenes reales del producto (no se simulan
             ángulos que no existen: si solo hay una imagen, ocupa todo el
             ancho; con varias, se acomodan en grid de 2 columnas). */}
-        <div className={images.length > 1 ? "grid grid-cols-2 gap-2" : ""}>
-          {images.length > 0 ? (
-            images.map((img) => (
-              <div key={img.id} className="aspect-[4/5] overflow-hidden bg-velvet-silk">
-                <img src={img.url} alt={img.altText ?? product.name} className="h-full w-full object-cover" />
-              </div>
-            ))
-          ) : (
-            <div className="flex aspect-[4/5] items-center justify-center bg-velvet-silk text-velvet-ash">Sin imagen</div>
+        <div>
+          {/* AGREGADO: si el admin subió una vuelta 360° para este producto,
+              se muestra primero el visor interactivo (arrastrar para girar),
+              y debajo la galería normal de fotos/gifs/videos. */}
+          {product.view360Frames && product.view360Frames.length > 0 && (
+            <div className="mb-2">
+              <Product360Viewer frames={product.view360Frames} />
+            </div>
           )}
+          <div className={images.length > 1 ? "grid grid-cols-2 gap-2" : ""}>
+            {images.length > 0 ? (
+              images.map((img) => (
+                <div key={img.id} className="aspect-[4/5] overflow-hidden bg-velvet-silk">
+                  {img.mediaType === "VIDEO" ? (
+                    <video src={img.url} className="h-full w-full object-cover" controls muted playsInline />
+                  ) : (
+                    <img src={img.url} alt={img.altText ?? product.name} className="h-full w-full object-cover" />
+                  )}
+                </div>
+              ))
+            ) : (
+              !product.view360Frames?.length && (
+                <div className="flex aspect-[4/5] items-center justify-center bg-velvet-silk text-velvet-ash">Sin imagen</div>
+              )
+            )}
+          </div>
         </div>
 
         {/* INFO — panel fijo tipo ficha de producto de un retailer deportivo. */}

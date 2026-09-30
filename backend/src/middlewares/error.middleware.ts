@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
+import { MulterError } from "multer";
 import { AppError } from "../utils/AppError";
 import { logger } from "../utils/logger";
 import { isProduction } from "../config/env";
@@ -30,6 +31,22 @@ export function errorMiddleware(err: unknown, req: Request, res: Response, _next
         correlationId: cid,
       },
     });
+    return;
+  }
+
+  // AGREGADO: Multer lanza sus propios errores (archivo muy grande,
+  // demasiados archivos, etc.) que no son AppError ni ZodError — sin esto
+  // caían al bloque genérico de abajo y el admin veía "error inesperado" en
+  // vez de un mensaje claro sobre qué límite pasó.
+  if (err instanceof MulterError) {
+    const message =
+      err.code === "LIMIT_FILE_SIZE"
+        ? "El archivo es demasiado grande."
+        : err.code === "LIMIT_FILE_COUNT" || err.code === "LIMIT_UNEXPECTED_FILE"
+          ? "Se enviaron demasiados archivos a la vez."
+          : "No se pudo procesar el archivo subido.";
+    logger.warn(message, { cid, path: req.path, multerCode: err.code });
+    res.status(400).json({ error: { message, code: err.code, correlationId: cid } });
     return;
   }
 

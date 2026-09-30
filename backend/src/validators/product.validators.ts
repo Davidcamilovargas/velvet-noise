@@ -10,10 +10,31 @@ const variantSchema = z.object({
   stock: z.number().int().min(0),
 });
 
+// CORREGIDO: antes exigía z.string().url(), que rechaza rutas relativas como
+// "/products/foto.jpg" (así están guardadas casi todas las fotos del
+// catálogo sembrado). Ahora acepta ambas: una URL completa (https://... —
+// lo que devuelve Cloudinary al subir un archivo real) o una ruta que
+// empiece con "/". No se acepta ningún otro esquema (javascript:, data:).
+const productImageUrlSchema = z
+  .string()
+  .trim()
+  .min(1, "La URL de la imagen es obligatoria")
+  .refine((val) => val.startsWith("/") || /^https?:\/\//i.test(val), {
+    message: 'Debe empezar con "/" (ej: /products/foto.jpg) o ser una URL completa (http/https)',
+  });
+
 const imageSchema = z.object({
-  url: z.string().trim().url(),
+  url: productImageUrlSchema,
   altText: z.string().trim().max(200).optional(),
   isPrimary: z.boolean().optional().default(false),
+});
+
+// AGREGADO: valida el body de "reordenar galería" — una lista de ids de
+// fotos en el nuevo orden deseado. La validación de que la lista realmente
+// corresponda a las fotos actuales del producto se hace en
+// upload.service.ts (ahí sí se puede comparar contra la base de datos).
+export const reorderImagesSchema = z.object({
+  imageIds: z.array(z.string().uuid()).min(1),
 });
 
 export const createProductSchema = z.object({
@@ -35,7 +56,15 @@ export const createProductSchema = z.object({
   variants: z.array(variantSchema).optional().default([]),
 });
 
-export const updateProductSchema = createProductSchema.partial();
+// CORREGIDO: antes updateProductSchema heredaba el .default([]) de "images"
+// vía .partial(), así que si el panel de admin no mandaba fotos, Zod las
+// convertía en [] de todas formas — y el servicio no podía distinguir "no
+// toqué las fotos" de "quiero dejarlo sin fotos". Aquí se sobreescribe
+// "images" sin default para que quede en `undefined` cuando no se manda.
+// Ver product.service.ts#updateProduct.
+export const updateProductSchema = createProductSchema.partial().extend({
+  images: z.array(imageSchema).optional(),
+});
 
 export const productIdParamSchema = z.object({ id: z.string().uuid("Id de producto inválido") });
 

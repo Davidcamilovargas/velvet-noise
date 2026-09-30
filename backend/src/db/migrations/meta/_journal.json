@@ -29,6 +29,13 @@
       "when": 1788872513546,
       "tag": "0003_rebrand_velvet_noise_default_store_name",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790727496088,
+      "tag": "0004_add_media_uploads",
+      "breakpoints": true
     }
   ]
 }

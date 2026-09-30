@@ -34,6 +34,19 @@ export interface ProductImage {
   altText: string | null;
   position: number;
   isPrimary: boolean;
+  // AGREGADO: viene del backend cuando la foto se subió como archivo real
+  // (Cloudinary) en vez de escribirse como link. `mediaType` distingue foto
+  // de video corto (un gif es "IMAGE": el navegador ya lo anima solo).
+  mediaType?: "IMAGE" | "VIDEO";
+  cloudinaryPublicId?: string | null;
+}
+
+// AGREGADO: un frame de la vista 360° interactiva (el cliente arrastra para
+// girar el producto). `frameIndex` define el orden exacto de la vuelta.
+export interface ProductView360Frame {
+  id: string;
+  url: string;
+  frameIndex: number;
 }
 
 export interface ProductVariant {
@@ -62,6 +75,7 @@ export interface Product {
   ratingAverage: string;
   ratingCount: number;
   images: ProductImage[];
+  view360Frames?: ProductView360Frame[];
   variants: ProductVariant[];
   stock: number;
   createdAt: string;

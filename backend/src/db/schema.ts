@@ -68,6 +68,13 @@ export const inventoryMovementTypeEnum = pgEnum("inventory_movement_type", [
 ]);
 export const shippingMethodEnum = pgEnum("shipping_method", ["STANDARD", "EXPRESS", "PICKUP"]);
 
+// AGREGADO (Fase "subida de archivos reales"): distingue si una foto de
+// producto es una imagen fija (jpg/png/gif — el navegador ya anima los gif
+// solo, no necesitan trato especial) o un video corto. No incluye "360" a
+// propósito: una secuencia 360° no es UNA foto, es un conjunto de frames, y
+// vive en su propia tabla (product_view_360_frames) más abajo.
+export const productMediaTypeEnum = pgEnum("product_media_type", ["IMAGE", "VIDEO"]);
+
 const id = () => uuid("id").defaultRandom().primaryKey();
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -224,6 +231,14 @@ export const productImages = pgTable(
       .notNull()
       .references(() => products.id, { onDelete: "cascade" }),
     url: text("url").notNull(),
+    // AGREGADO: id del archivo en Cloudinary (ej. "velvet-noise/gorras/abc123").
+    // Se necesita para poder BORRAR el archivo real de Cloudinary cuando el
+    // admin quita una foto — con solo la url no se puede borrar del storage,
+    // solo de la base de datos. Null para fotos antiguas (las que quedaron
+    // guardadas como ruta relativa a frontend/public, de antes de esta
+    // funcionalidad) — a esas no se les puede pedir borrado en Cloudinary.
+    cloudinaryPublicId: text("cloudinary_public_id"),
+    mediaType: productMediaTypeEnum("media_type").notNull().default("IMAGE"),
     altText: varchar("alt_text", { length: 200 }),
     position: integer("position").notNull().default(0),
     isPrimary: boolean("is_primary").notNull().default(false),
@@ -231,6 +246,38 @@ export const productImages = pgTable(
   },
   (table) => ({
     productIdx: index("product_images_product_idx").on(table.productId),
+  })
+);
+
+// AGREGADO: secuencia de frames para el visor 360° interactivo (el cliente
+// arrastra para "girar" el producto). Es una tabla separada de
+// product_images a propósito: un 360° no es una foto más de la galería, es
+// un widget interactivo completo, y sus frames tienen que mantenerse en
+// ORDEN EXACTO (frameIndex) para que el arrastre se vea fluido — mezclar eso
+// con "position" de la galería normal (que el admin puede reordenar
+// libremente) sería confuso y frágil.
+export const productView360Frames = pgTable(
+  "product_view_360_frames",
+  {
+    id: id(),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    url: text("url").notNull(),
+    cloudinaryPublicId: text("cloudinary_public_id"),
+    // Orden del frame dentro de la vuelta completa (0, 1, 2, ...). El
+    // frontend los ordena por este campo antes de armar el visor.
+    frameIndex: integer("frame_index").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    productIdx: index("product_view_360_frames_product_idx").on(table.productId),
+    // Evita dos frames con el mismo índice para el mismo producto (ej. subir
+    // el mismo lote dos veces por error).
+    productFrameIdx: uniqueIndex("product_view_360_frames_product_frame_idx").on(
+      table.productId,
+      table.frameIndex
+    ),
   })
 );
 
@@ -609,9 +656,14 @@ export const usersRelations = relations(users, ({ many, one }) => ({
 export const productsRelations = relations(products, ({ many, one }) => ({
   category: one(categories, { fields: [products.categoryId], references: [categories.id] }),
   images: many(productImages),
+  view360Frames: many(productView360Frames),
   variants: many(productVariants),
   inventory: one(inventory, { fields: [products.id], references: [inventory.productId] }),
   reviews: many(reviews),
+}));
+
+export const productView360FramesRelations = relations(productView360Frames, ({ one }) => ({
+  product: one(products, { fields: [productView360Frames.productId], references: [products.id] }),
 }));
 
 export const productVariantsRelations = relations(productVariants, ({ one }) => ({
