@@ -12,6 +12,8 @@ import { Button } from "../components/ui/Button";
 import { Alert } from "../components/ui/Alert";
 import { ProductCard } from "../components/product/ProductCard";
 import { Product360Viewer } from "../components/product/Product360Viewer";
+import { ZoomableImage } from "../components/product/ZoomableImage";
+import { ImageLightbox } from "../components/product/ImageLightbox";
 import { EmptyState } from "../components/ui/EmptyState";
 
 type ProductWithRelated = Product & { relatedProducts: Product[] };
@@ -66,6 +68,11 @@ export default function ProductDetail() {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [addedMessage, setAddedMessage] = useState(false);
+  // AGREGADO: índice de la foto abierta en la pantalla grande con scroll
+  // (null = cerrada). Declarado aquí arriba, junto a los demás useState,
+  // porque más abajo hay "return" tempranos (cargando / error) — un hook
+  // no puede declararse después de un return condicional.
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const { user } = useAuth();
   const [reviews, setReviews] = useState<Review[] | null>(null);
@@ -183,6 +190,9 @@ export default function ProductDetail() {
   const stock = selectedVariant?.stock ?? product.stock;
   const canAdd = !!selectedVariant && stock > 0;
   const images = product.images.length > 0 ? product.images : [];
+  // AGREGADO: solo las fotos fijas (no videos) entran a la pantalla grande
+  // con scroll — un video ya tiene sus propios controles nativos.
+  const stillImages = images.filter((img) => img.mediaType !== "VIDEO");
 
   async function handleAddToCart() {
     if (!product || !canAdd) return;
@@ -219,15 +229,21 @@ export default function ProductDetail() {
           )}
           <div className={images.length > 1 ? "grid grid-cols-2 gap-2" : ""}>
             {images.length > 0 ? (
-              images.map((img) => (
-                <div key={img.id} className="aspect-[4/5] overflow-hidden bg-velvet-silk">
-                  {img.mediaType === "VIDEO" ? (
+              images.map((img) =>
+                img.mediaType === "VIDEO" ? (
+                  <div key={img.id} className="aspect-[4/5] overflow-hidden bg-velvet-silk">
                     <video src={img.url} className="h-full w-full object-cover" controls muted playsInline />
-                  ) : (
-                    <img src={img.url} alt={img.altText ?? product.name} className="h-full w-full object-cover" />
-                  )}
-                </div>
-              ))
+                  </div>
+                ) : (
+                  <ZoomableImage
+                    key={img.id}
+                    src={img.url}
+                    alt={img.altText ?? product.name}
+                    className="aspect-[4/5] bg-velvet-silk"
+                    onClick={() => setLightboxIndex(stillImages.findIndex((i) => i.id === img.id))}
+                  />
+                )
+              )
             ) : (
               !product.view360Frames?.length && (
                 <div className="flex aspect-[4/5] items-center justify-center bg-velvet-silk text-velvet-ash">Sin imagen</div>
@@ -470,6 +486,18 @@ export default function ProductDetail() {
             ))}
           </div>
         </section>
+      )}
+
+      {/* AGREGADO: pantalla grande con scroll al hacer clic en una foto de
+          la galería (ver ImageLightbox.tsx). "position: fixed", así que da
+          igual dónde vive en el árbol del componente. */}
+      {lightboxIndex !== null && stillImages.length > 0 && (
+        <ImageLightbox
+          images={stillImages.map((img) => ({ url: img.url, alt: img.altText ?? product.name }))}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onNavigate={setLightboxIndex}
+        />
       )}
     </div>
   );
