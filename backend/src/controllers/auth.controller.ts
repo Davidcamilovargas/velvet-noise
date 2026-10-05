@@ -36,6 +36,11 @@ export const registerHandler = asyncHandler(async (req: Request, res: Response) 
   respondWithSession(res, result, 201);
 });
 
+export const guestCheckoutHandler = asyncHandler(async (req: Request, res: Response) => {
+  const result = await authService.guestCheckout(req.body, requestMeta(req));
+  respondWithSession(res, result, 201);
+});
+
 export const loginHandler = asyncHandler(async (req: Request, res: Response) => {
   const result = await authService.login(req.body, requestMeta(req));
   respondWithSession(res, result);

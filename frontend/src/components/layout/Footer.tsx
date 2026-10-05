@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
+import { whatsappLink } from "../../config/store";
 
 export function Footer() {
+  const wa = whatsappLink("Hola, tengo una pregunta.");
   return (
     <footer className="border-t border-velvet-black/10 bg-white">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-16 sm:px-6 md:grid-cols-4 lg:px-8">
@@ -17,6 +19,9 @@ export function Footer() {
             <li><Link to="/shop" className="transition hover:text-velvet-black">Catálogo</Link></li>
             <li><Link to="/shop?onSale=true" className="transition hover:text-velvet-black">Ofertas</Link></li>
             <li><Link to="/contacto" className="transition hover:text-velvet-black">Contacto</Link></li>
+            {wa && (
+              <li><a href={wa} target="_blank" rel="noreferrer" className="transition hover:text-velvet-black">WhatsApp</a></li>
+            )}
           </ul>
         </div>
 
@@ -25,13 +30,13 @@ export function Footer() {
           <ul className="mt-4 space-y-2.5 text-sm text-velvet-ash">
             <li><Link to="/politicas/terminos" className="transition hover:text-velvet-black">Términos y condiciones</Link></li>
             <li><Link to="/politicas/privacidad" className="transition hover:text-velvet-black">Política de privacidad</Link></li>
-            <li><Link to="/politicas/envios" className="transition hover:text-velvet-black">Información de envíos</Link></li>
+            <li><Link to="/politicas/envios" className="transition hover:text-velvet-black">Envíos, cambios y devoluciones</Link></li>
           </ul>
         </div>
 
         <div>
           <h4 className="text-xs font-semibold uppercase tracking-label text-velvet-black">Pago</h4>
-          <p className="mt-4 text-sm text-velvet-ash">PSE · Tarjetas de crédito y débito · Nequi (vía Wompi)</p>
+          <p className="mt-4 text-sm text-velvet-ash">Tarjeta de crédito o débito, PSE y Nequi, procesados por Wompi.</p>
         </div>
       </div>
       <div className="border-t border-velvet-black/10 py-5 text-center text-[11px] uppercase tracking-label text-velvet-ash">

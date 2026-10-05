@@ -4,6 +4,7 @@ import type { Product } from "../../types/api";
 import { calculateDiscountPercent, formatCurrency } from "../../utils/format";
 import { useAddToCart } from "../../hooks/useAddToCart";
 import { Button } from "../ui/Button";
+import { optimizedImage, optimizedSrcSet } from "../../utils/image";
 
 export function ProductCard({ product }: { product: Product }) {
   const addToCart = useAddToCart();
@@ -17,6 +18,9 @@ export function ProductCard({ product }: { product: Product }) {
   // entrar al detalle para seleccionar una (evita agregar la variante
   // incorrecta por accidente).
   const needsVariantSelection = product.variants.length > 1;
+  // Tallas con stock, en el orden en que vienen las variantes. Le dicen a
+  // quien mira la grilla si su talla está, sin tener que abrir el producto.
+  const sizesInStock = [...new Set(product.variants.filter((v) => v.size && v.stock > 0).map((v) => v.size as string))];
 
   async function handleAddToCart(e: React.MouseEvent) {
     e.preventDefault();
@@ -32,10 +36,13 @@ export function ProductCard({ product }: { product: Product }) {
       <div className="relative aspect-[4/5] overflow-hidden bg-velvet-silk">
         {primaryImage ? (
           <img
-            src={primaryImage.url}
+            src={optimizedImage(primaryImage.url, 600)}
+            srcSet={optimizedSrcSet(primaryImage.url, [400, 600, 900])}
+            sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
             alt={primaryImage.altText ?? product.name}
             loading="lazy"
-            className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+            decoding="async"
+            className="h-full w-full object-cover transition-transform duration-300 ease-out [@media(hover:hover)]:group-hover:scale-[1.03]"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-velvet-ash">Sin imagen</div>
@@ -74,9 +81,13 @@ export function ProductCard({ product }: { product: Product }) {
         </div>
 
         {needsVariantSelection && !outOfStock ? (
-          <span className="mt-3 block text-center text-[11px] uppercase tracking-label text-velvet-ash">
-            Elige color/talla en el producto
-          </span>
+          sizesInStock.length > 0 && (
+            <ul aria-label="Tallas disponibles" className="mt-2 flex flex-wrap gap-x-2.5 text-xs text-velvet-ash">
+              {sizesInStock.map((size) => (
+                <li key={size}>{size}</li>
+              ))}
+            </ul>
+          )
         ) : (
           <Button
             variant={outOfStock ? "secondary" : "primary"}

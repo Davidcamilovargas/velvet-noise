@@ -10,7 +10,7 @@ import { sendEmail } from "../jobs/email.service";
 import { welcomeEmail, passwordResetEmail } from "../jobs/emailTemplates";
 import { getStoreSettings } from "./settings.service";
 import { logger } from "../utils/logger";
-import type { RegisterInput, LoginInput } from "../validators/auth.validators";
+import type { RegisterInput, LoginInput, GuestCheckoutInput } from "../validators/auth.validators";
 
 export interface AuthResult {
   user: PublicUser;
@@ -86,6 +86,44 @@ export async function register(
 
   const { storeName } = await getStoreSettings();
   await sendEmail({ to: user.email, ...welcomeEmail(storeName, user.firstName) });
+
+  return issueSession(user, meta);
+}
+
+/**
+ * Compra sin cuenta. En vez de un modelo paralelo de "pedido de invitado"
+ * (que obligaría a duplicar carrito, pedidos y pagos), se crea una cuenta
+ * CUSTOMER normal con una contraseña aleatoria que nadie conoce y se abre
+ * sesión — así todo el flujo autenticado existente sigue igual. Si la
+ * persona quiere entrar después, usa "¿Olvidaste tu contraseña?" para
+ * fijar una.
+ *
+ * Si el correo ya tiene cuenta NO se abre sesión: eso permitiría a
+ * cualquiera entrar a una cuenta ajena con solo conocer el correo.
+ */
+export async function guestCheckout(
+  input: GuestCheckoutInput,
+  meta: { userAgent?: string; ipAddress?: string }
+): Promise<AuthResult> {
+  const existing = await db.query.users.findFirst({ where: eq(users.email, input.email) });
+  if (existing) {
+    throw AppError.conflict(
+      "Ya tienes una cuenta con este correo. Inicia sesión para continuar con tu compra.",
+      "EMAIL_TAKEN"
+    );
+  }
+
+  const passwordHash = await hashPassword(generateOpaqueToken().token);
+  const [user] = await db
+    .insert(users)
+    .values({
+      email: input.email,
+      passwordHash,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      phone: input.phone,
+    })
+    .returning();
 
   return issueSession(user, meta);
 }

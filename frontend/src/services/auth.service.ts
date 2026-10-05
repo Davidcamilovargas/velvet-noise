@@ -20,6 +20,19 @@ export async function registerRequest(payload: RegisterPayload): Promise<User> {
   return res.data.data.user;
 }
 
+export interface GuestCheckoutPayload {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+}
+
+export async function guestCheckoutRequest(payload: GuestCheckoutPayload): Promise<User> {
+  const res = await api.post<{ data: AuthResponse }>("/auth/guest", payload);
+  setAccessToken(res.data.data.accessToken);
+  return res.data.data.user;
+}
+
 export async function loginRequest(email: string, password: string): Promise<User> {
   const res = await api.post<{ data: AuthResponse }>("/auth/login", { email, password });
   setAccessToken(res.data.data.accessToken);

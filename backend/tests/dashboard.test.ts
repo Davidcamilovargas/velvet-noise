@@ -147,8 +147,8 @@ describe("Dashboard administrativo (Fase 11)", () => {
     expect(after.status).toBe(200);
     const summary = after.body.data;
 
-    // 2 pedidos pagados de 40.000 + 19% de impuesto (store_settings.taxPercentage por defecto) + envío $0 (PICKUP)
-    expect(summary.totalRevenue - revenueBefore).toBeCloseTo(2 * 40000 * 1.19, 5);
+    // 2 pedidos pagados de 40.000 (IVA incluido en el precio) + envío $0 (PICKUP)
+    expect(summary.totalRevenue - revenueBefore).toBeCloseTo(2 * 40000, 5);
     expect(summary.totalOrders - ordersBefore).toBe(3);
     expect(summary.pendingPaymentOrders).toBeGreaterThanOrEqual(1);
 
@@ -163,7 +163,7 @@ describe("Dashboard administrativo (Fase 11)", () => {
     const todayKey = new Date().toISOString().slice(0, 10);
     const todayEntry = summary.salesLast14Days.find((d: { date: string }) => d.date === todayKey);
     expect(todayEntry).toBeTruthy();
-    expect(todayEntry.total).toBeGreaterThanOrEqual(2 * 40000 * 1.19 - 1);
+    expect(todayEntry.total).toBeGreaterThanOrEqual(2 * 40000 - 1);
   });
 
   it("marca productos con stock bajo o igual al mínimo configurado", async () => {

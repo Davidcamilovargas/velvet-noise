@@ -182,7 +182,8 @@ describe("Checkout (direcciones, envío, pedidos)", () => {
     expect(order.paymentStatus).toBe("PENDING");
     expect(order.subtotal).toBe("50000.00");
     expect(order.shippingTotal).toBe("12000.00"); // tarifa STANDARD por defecto
-    expect(Number(order.total)).toBeCloseTo(50000 + 12000 + Number(order.taxTotal), 2);
+    // El IVA ya está incluido en el precio: total = productos + envío.
+    expect(Number(order.total)).toBeCloseTo(50000 + 12000, 2);
     expect(order.items).toHaveLength(1);
     expect(order.items[0].skuSnapshot).toBeTruthy();
     expect(order.shippingAddressId).toBe(addressId);
@@ -241,7 +242,7 @@ describe("Checkout (direcciones, envío, pedidos)", () => {
     expect(res.status).toBe(201);
     createdOrderIds.push(res.body.data.id);
     expect(res.body.data.discountTotal).toBe("10000.00");
-    expect(Number(res.body.data.total)).toBeCloseTo(50000 - 10000 + Number(res.body.data.taxTotal), 2);
+    expect(Number(res.body.data.total)).toBeCloseTo(50000 - 10000, 2);
   });
 
   it("un cupón de un solo uso por usuario ya no se puede volver a aplicar tras ese pedido", async () => {

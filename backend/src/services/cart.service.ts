@@ -81,8 +81,13 @@ export async function getCart(userId: string) {
   }
 
   const taxPercentage = await getTaxPercentage();
-  const taxTotal = Math.round((subtotal - discountTotal) * (taxPercentage / 100) * 100) / 100;
-  const total = subtotal - discountTotal + taxTotal;
+  // Los precios publicados YA incluyen el IVA (así lo exige el Estatuto del
+  // Consumidor, Ley 1480 art. 26, y así lo definió la tienda). taxTotal es
+  // la parte del precio que corresponde al IVA, solo informativa: no se
+  // suma al total.
+  const taxableTotal = subtotal - discountTotal;
+  const taxTotal = Math.round(((taxableTotal * taxPercentage) / (100 + taxPercentage)) * 100) / 100;
+  const total = taxableTotal;
 
   return {
     id: cart.id,

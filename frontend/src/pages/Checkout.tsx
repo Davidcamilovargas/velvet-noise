@@ -8,6 +8,7 @@ import { createOrder } from "../services/order.service";
 import { getApiErrorMessage } from "../services/api";
 import type { Address, ShippingMethod, ShippingMethodOption } from "../types/api";
 import { formatCurrency } from "../utils/format";
+import { useCartStore } from "../store/cart.store";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Alert } from "../components/ui/Alert";
@@ -39,6 +40,163 @@ const SECTION_TITLE_CLASSES = "text-xs font-semibold uppercase tracking-label te
 
 export default function Checkout() {
   useSEO({ title: "Checkout", noindex: true });
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <div className="mx-auto max-w-4xl px-4 py-16 text-center text-velvet-ash">Cargando checkout…</div>;
+  }
+  // Sin sesión: primero los datos de contacto. Al enviarlos se abre una
+  // sesión y este mismo componente pasa a mostrar el checkout completo.
+  return user ? <CheckoutForm /> : <GuestCheckoutStep />;
+}
+
+function GuestCheckoutStep() {
+  const { guestCheckout } = useAuth();
+  const lines = useCartStore((s) => s.lines);
+  const subtotal = useCartStore((s) => s.subtotal());
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "" });
+  const [error, setError] = useState<string | null>(null);
+  const [emailTaken, setEmailTaken] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setEmailTaken(false);
+    setIsSubmitting(true);
+    try {
+      await guestCheckout({
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+      });
+    } catch (err) {
+      const code = (err as { response?: { data?: { error?: { code?: string } } } })?.response?.data?.error?.code;
+      setEmailTaken(code === "EMAIL_TAKEN");
+      setError(getApiErrorMessage(err));
+      setIsSubmitting(false);
+    }
+  }
+
+  if (lines.length === 0) {
+    return (
+      <div className="mx-auto max-w-xl px-4 py-16">
+        <EmptyState title="Tu carrito está vacío" description="Agrega productos antes de continuar al checkout." />
+        <div className="mt-6 text-center">
+          <Link to="/shop" className="text-sm text-velvet-black/70 transition hover:text-velvet-black">
+            Ir a la tienda
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const itemCount = lines.reduce((sum, l) => sum + l.quantity, 0);
+
+  return (
+    <div className="mx-auto max-w-5xl px-4 py-10">
+      <h1 className="font-display text-3xl text-velvet-black">Checkout</h1>
+
+      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <form onSubmit={handleSubmit} className="border border-velvet-black/10 p-6 lg:col-span-2">
+          <h2 className="font-display text-xl text-velvet-black">Tus datos</h2>
+          <p className="mt-1 text-sm text-velvet-ash">
+            No necesitas crear una cuenta. Te escribimos a este correo y teléfono sobre tu pedido.
+          </p>
+
+          <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <Input
+              label="Nombre"
+              required
+              autoComplete="given-name"
+              value={form.firstName}
+              onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
+            />
+            <Input
+              label="Apellido"
+              required
+              autoComplete="family-name"
+              value={form.lastName}
+              onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
+            />
+            <Input
+              label="Correo electrónico"
+              type="email"
+              required
+              autoComplete="email"
+              value={form.email}
+              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+            />
+            <Input
+              label="Teléfono"
+              type="tel"
+              required
+              autoComplete="tel"
+              inputMode="tel"
+              placeholder="300 123 4567"
+              value={form.phone}
+              onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+            />
+          </div>
+
+          {error && (
+            <div className="mt-4">
+              <Alert variant="error">
+                {error}
+                {emailTaken && (
+                  <>
+                    {" "}
+                    <Link to="/login" state={{ from: "/checkout" }} className="font-semibold underline">
+                      Iniciar sesión
+                    </Link>
+                  </>
+                )}
+              </Alert>
+            </div>
+          )}
+
+          <Button type="submit" isLoading={isSubmitting} className="mt-6 w-full sm:w-auto">
+            Continuar con el envío
+          </Button>
+
+          <p className="mt-6 border-t border-velvet-black/10 pt-4 text-sm text-velvet-ash">
+            ¿Ya tienes cuenta?{" "}
+            <Link to="/login" state={{ from: "/checkout" }} className="font-semibold text-velvet-black hover:underline">
+              Inicia sesión
+            </Link>
+          </p>
+        </form>
+
+        <div>
+          <div className="border border-velvet-black/10 bg-velvet-silk/40 p-6">
+            <h2 className={SECTION_TITLE_CLASSES}>Tu pedido</h2>
+            <ul className="mt-4 space-y-2 text-sm text-velvet-black/80">
+              {lines.map((line) => (
+                <li key={`${line.productId}-${line.variantId ?? ""}`} className="flex justify-between gap-2">
+                  <span className="line-clamp-1">
+                    {line.quantity}× {line.name}
+                    {line.variantLabel ? ` (${line.variantLabel})` : ""}
+                  </span>
+                  <span className="shrink-0">{formatCurrency(Number(line.unitPrice) * line.quantity)}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4 flex justify-between border-t border-velvet-black/10 pt-3 text-sm text-velvet-black">
+              <span>
+                Subtotal ({itemCount} {itemCount === 1 ? "prenda" : "prendas"})
+              </span>
+              <span className="font-semibold">{formatCurrency(subtotal)}</span>
+            </div>
+            <p className="mt-2 text-xs text-velvet-ash">El envío se calcula en el siguiente paso.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CheckoutForm() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -76,7 +234,8 @@ export default function Checkout() {
   const subtotal = cart?.subtotal ?? 0;
   const discountTotal = cart?.discountTotal ?? 0;
   const taxTotal = cart?.taxTotal ?? 0;
-  const estimatedTotal = subtotal - discountTotal + taxTotal + shippingCost;
+  // taxTotal es el IVA ya incluido en los precios: se muestra, no se suma.
+  const estimatedTotal = subtotal - discountTotal + shippingCost;
 
   const needsAddress = shippingMethod !== "PICKUP";
   const hasUsableAddress =
@@ -341,10 +500,6 @@ export default function Checkout() {
                 </div>
               )}
               <div className="flex justify-between">
-                <span>Impuestos</span>
-                <span>{formatCurrency(taxTotal)}</span>
-              </div>
-              <div className="flex justify-between">
                 <span>Envío</span>
                 <span>{shippingCost > 0 ? formatCurrency(shippingCost) : "Gratis"}</span>
               </div>
@@ -354,6 +509,9 @@ export default function Checkout() {
               <span>Total</span>
               <span>{formatCurrency(estimatedTotal)}</span>
             </div>
+            {taxTotal > 0 && (
+              <p className="mt-1 text-right text-xs text-velvet-ash">Incluye {formatCurrency(taxTotal)} de IVA</p>
+            )}
 
             {submitError && (
               <div className="mt-4">

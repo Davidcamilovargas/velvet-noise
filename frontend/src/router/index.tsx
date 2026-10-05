@@ -20,6 +20,7 @@ const Orders = lazy(() => import("../pages/Orders"));
 const OrderDetail = lazy(() => import("../pages/OrderDetail"));
 const Profile = lazy(() => import("../pages/Profile"));
 const Contact = lazy(() => import("../pages/Contact"));
+const Policy = lazy(() => import("../pages/Policy"));
 const NotFound = lazy(() => import("../pages/NotFound"));
 const AdminDashboard = lazy(() => import("../pages/Admin/Dashboard"));
 const AdminProducts = lazy(() => import("../pages/Admin/Products"));
@@ -55,10 +56,13 @@ const router = createBrowserRouter([
       { path: "forgot-password", element: withSuspense(<ForgotPassword />) },
       { path: "reset-password/:token", element: withSuspense(<ResetPassword />) },
       { path: "contacto", element: withSuspense(<Contact />) },
+      { path: "politicas/:slug", element: withSuspense(<Policy />) },
+      // Público: quien no tiene cuenta compra con solo nombre, correo y
+      // teléfono (ver GuestCheckoutStep en pages/Checkout.tsx).
+      { path: "checkout", element: withSuspense(<Checkout />) },
       {
         element: <ProtectedRoute />,
         children: [
-          { path: "checkout", element: withSuspense(<Checkout />) },
           { path: "orders", element: withSuspense(<Orders />) },
           { path: "orders/:id", element: withSuspense(<OrderDetail />) },
           { path: "profile", element: withSuspense(<Profile />) },

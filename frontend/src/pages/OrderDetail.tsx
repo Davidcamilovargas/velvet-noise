@@ -176,6 +176,11 @@ export default function OrderDetail() {
   }
 
   const addr = order.addressSnapshot as Record<string, string | boolean | undefined>;
+  const taxAddedOnTop =
+    Math.abs(
+      Number(order.total) -
+        (Number(order.subtotal) - Number(order.discountTotal) + Number(order.shippingTotal) + Number(order.taxTotal))
+    ) < 1 && Number(order.taxTotal) > 0;
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12">
@@ -290,10 +295,14 @@ export default function OrderDetail() {
               <span>-{formatCurrency(order.discountTotal)}</span>
             </div>
           )}
-          <div className="flex justify-between">
-            <span>Impuestos</span>
-            <span>{formatCurrency(order.taxTotal)}</span>
-          </div>
+          {/* Pedidos anteriores al cambio de octubre 2026 tenían el IVA
+              sumado encima del precio; desde entonces va incluido. */}
+          {taxAddedOnTop && (
+            <div className="flex justify-between">
+              <span>Impuestos</span>
+              <span>{formatCurrency(order.taxTotal)}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span>Envío</span>
             <span>{Number(order.shippingTotal) > 0 ? formatCurrency(order.shippingTotal) : "Gratis"}</span>
@@ -303,6 +312,9 @@ export default function OrderDetail() {
           <span>Total</span>
           <span>{formatCurrency(order.total, order.currency)}</span>
         </div>
+        {!taxAddedOnTop && Number(order.taxTotal) > 0 && (
+          <p className="mt-1 text-right text-xs text-velvet-ash">Incluye {formatCurrency(order.taxTotal)} de IVA</p>
+        )}
       </div>
 
       {order.shipments.length > 0 && (

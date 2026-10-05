@@ -286,7 +286,9 @@ describe("Panel administrativo: gestión (Fase 12)", () => {
       const { productId, variantId } = await createProductWithStock("Producto Tasa Nueva", 5, 100000);
       await request(app).post("/api/cart/items").set("Authorization", `Bearer ${customerToken}`).send({ productId, variantId, quantity: 1 });
       const cart = await request(app).get("/api/cart").set("Authorization", `Bearer ${customerToken}`);
-      expect(cart.body.data.taxTotal).toBeCloseTo(100000 * 0.15, 5);
+      // IVA incluido en el precio: 100.000 * 15 / 115
+      expect(cart.body.data.taxTotal).toBeCloseTo((100000 * 15) / 115, 2);
+      expect(cart.body.data.total).toBe(100000);
 
       // se restaura el 19% para no afectar el resto de la suite
       await request(app)

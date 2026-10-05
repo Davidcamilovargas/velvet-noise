@@ -11,6 +11,7 @@ import {
   type BackendCart,
 } from "../services/cart.service";
 import { getApiErrorMessage } from "../services/api";
+import { optimizedImage } from "../utils/image";
 import { formatCurrency } from "../utils/format";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
@@ -60,7 +61,7 @@ function GuestCart() {
           <div key={`${line.productId}-${line.variantId}`} className="flex items-center gap-4 border border-velvet-black/10 p-4">
             <div className="h-20 w-20 shrink-0 overflow-hidden bg-velvet-silk">
               {line.imageUrl && (
-                <img src={line.imageUrl} alt={line.name} loading="lazy" className="h-full w-full object-cover" />
+                <img src={optimizedImage(line.imageUrl, 200)} alt={line.name} loading="lazy" className="h-full w-full object-cover" />
               )}
             </div>
             <div className="flex-1">
@@ -289,12 +290,6 @@ function CartSummary({
           <span>-{formatCurrency(discount)}</span>
         </div>
       )}
-      {tax > 0 && (
-        <div className="mt-1 flex justify-between text-sm text-velvet-black/70">
-          <span>Impuestos</span>
-          <span>{formatCurrency(tax)}</span>
-        </div>
-      )}
       <div className="mt-1 flex justify-between text-sm text-velvet-ash">
         <span>Envío</span>
         <span>Se calcula en el checkout</span>
@@ -303,6 +298,7 @@ function CartSummary({
         <span>Total</span>
         <span>{formatCurrency(total ?? subtotal)}</span>
       </div>
+      {tax > 0 && <p className="mt-1 text-right text-xs text-velvet-ash">Incluye {formatCurrency(tax)} de IVA</p>}
 
       <div className="mt-5 flex flex-col gap-3">
         <Button onClick={onCheckout} disabled={!onCheckout || checkoutDisabled} className="w-full">

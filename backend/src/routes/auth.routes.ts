@@ -3,9 +3,10 @@ import { validate } from "../middlewares/validate.middleware";
 import { authLimiter, loginPerAccountLimiter, passwordResetLimiter, refreshLimiter } from "../middlewares/rateLimiters";
 import { requireAuth } from "../middlewares/auth.middleware";
 import { verifyRefreshOrigin } from "../middlewares/csrfOriginCheck.middleware";
-import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../validators/auth.validators";
+import { registerSchema, guestCheckoutSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from "../validators/auth.validators";
 import {
   registerHandler,
+  guestCheckoutHandler,
   loginHandler,
   refreshHandler,
   logoutHandler,
@@ -17,6 +18,7 @@ import {
 export const authRouter = Router();
 
 authRouter.post("/register", authLimiter, validate({ body: registerSchema }), registerHandler);
+authRouter.post("/guest", authLimiter, validate({ body: guestCheckoutSchema }), guestCheckoutHandler);
 authRouter.post("/login", authLimiter, loginPerAccountLimiter, validate({ body: loginSchema }), loginHandler);
 authRouter.post("/refresh", refreshLimiter, verifyRefreshOrigin, refreshHandler);
 authRouter.post("/logout", logoutHandler);

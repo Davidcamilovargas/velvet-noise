@@ -19,6 +19,18 @@ export const registerSchema = z.object({
     .optional(),
 });
 
+// Compra sin cuenta: mismos datos de contacto que el registro, sin
+// contraseña. El teléfono es obligatorio porque la transportadora lo pide.
+export const guestCheckoutSchema = z.object({
+  email: z.string().trim().toLowerCase().email("Correo electrónico inválido"),
+  firstName: z.string().trim().min(1, "El nombre es requerido").max(120),
+  lastName: z.string().trim().min(1, "El apellido es requerido").max(120),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^\+?[0-9\s-]{7,20}$/, "Teléfono inválido"),
+});
+
 export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email("Correo electrónico inválido"),
   password: z.string().min(1, "La contraseña es requerida"),
@@ -34,6 +46,7 @@ export const resetPasswordSchema = z.object({
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type GuestCheckoutInput = z.infer<typeof guestCheckoutSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

@@ -92,6 +92,12 @@ services:
       # Opcional — déjala vacía para una demo (ver nota de WOMPI_* arriba).
       - key: VITE_WOMPI_PUBLIC_KEY
         sync: false
+      # WhatsApp de la tienda, solo dígitos con indicativo (573001234567).
+      # Vacía = no se muestra el botón de WhatsApp.
+      - key: VITE_WHATSAPP_NUMBER
+        sync: false
+      - key: VITE_CONTACT_EMAIL
+        sync: false
     routes:
       # SPA routing: cualquier ruta que no sea un archivo real cae en
       # index.html, para que /shop/producto-x funcione al recargar.

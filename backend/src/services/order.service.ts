@@ -118,7 +118,8 @@ export async function createOrderFromCart(userId: string, input: CreateOrderInpu
 
   const { addressId, snapshot } = await resolveShippingAddress(userId, input);
   const shippingTotal = await getShippingCost(input.shippingMethod);
-  const total = cart.subtotal - cart.discountTotal + cart.taxTotal + shippingTotal;
+  // taxTotal es el IVA ya incluido en los precios (ver cart.service.ts): no se suma.
+  const total = cart.subtotal - cart.discountTotal + shippingTotal;
 
   const couponId = cart.couponCode
     ? (await db.query.coupons.findFirst({ where: eq(coupons.code, cart.couponCode) }))?.id ?? null

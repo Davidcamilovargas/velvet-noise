@@ -7,21 +7,20 @@ import { ProductCardSkeleton } from "../components/product/ProductCardSkeleton";
 import { getApiErrorMessage } from "../services/api";
 import { Alert } from "../components/ui/Alert";
 import { useSEO } from "../hooks/useSEO";
+import { optimizedImage } from "../utils/image";
 
-// Tono "sereno, nunca eufórico" (manual de marca): frases cortas, sin signos
-// de exclamación, sin superlativos de venta. Se reemplazan los íconos emoji
-// del diseño original por numeración editorial — más cerca de una revista
-// que de un banner de e-commerce.
+// Tono "sereno, nunca eufórico" (manual de marca): frases cortas, sin
+// signos de exclamación, sin superlativos de venta.
 const BENEFITS = [
-  { n: "01", title: "Envíos a todo el país", description: "Tu pedido, a la puerta de tu casa." },
-  { n: "02", title: "Pagos seguros", description: "Procesados por Wompi. Nunca vemos tu tarjeta." },
-  { n: "03", title: "Garantía en cada prenda", description: "Cambios y devoluciones sin fricción." },
-  { n: "04", title: "Atención directa", description: "Antes, durante y después de tu compra." },
+  { title: "Envíos a todo Colombia", description: "El costo se ve antes de pagar." },
+  { title: "Pago con Wompi", description: "Tarjeta, PSE o Nequi. Nunca vemos tu tarjeta." },
+  { title: "Cambios de talla", description: "Si no te quedó, la cambiamos.", to: "/politicas/envios" },
+  { title: "Sin crear cuenta", description: "Compras con tu nombre, correo y teléfono." },
 ];
 
 export default function Home() {
   useSEO({
-    description: "Velvet Noise — ropa con carácter. Envíos a todo Colombia y pagos 100% seguros vía Wompi.",
+    description: "Velvet Noise — ruido por fuera, terciopelo por dentro. Envíos a todo Colombia, pagos con Wompi.",
   });
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -109,23 +108,43 @@ export default function Home() {
       <section id="categorias" className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
         <div className="flex items-end justify-between border-b border-velvet-black/10 pb-4">
           <h2 className="font-display text-2xl text-velvet-black">Categorías</h2>
-          <span className="text-xs uppercase tracking-label text-velvet-ash">
-            {categories.length > 0 ? `${categories.length} en total` : ""}
-          </span>
         </div>
-        <div className="mt-6 grid grid-cols-2 gap-px bg-velvet-black/10 sm:grid-cols-3 md:grid-cols-4">
+        {/* auto-fit: las columnas se reparten según cuántas categorías haya,
+            así no quedan celdas vacías (con 5 categorías en 4 columnas
+            sobraba un hueco gris). En celular, una última categoría impar
+            ocupa la fila completa por la misma razón. */}
+        <div className="mt-6 grid grid-cols-2 gap-px bg-velvet-black/10 sm:grid-cols-[repeat(auto-fit,minmax(160px,1fr))] max-sm:[&>a:last-child:nth-child(odd)]:col-span-2">
           {isLoading
             ? Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-32 animate-pulse bg-velvet-silk" />)
             : categories.map((category) => (
-                <Link
-                  key={category.id}
-                  to={`/shop?category=${category.slug}`}
-                  className="group flex h-32 flex-col items-center justify-center bg-white text-center transition hover:bg-velvet-silk/40"
-                >
-                  <span className="text-sm uppercase tracking-label text-velvet-black/80 transition group-hover:text-velvet-black">
-                    {category.name}
-                  </span>
-                </Link>
+                category.imageUrl ? (
+                  <Link
+                    key={category.id}
+                    to={`/shop?category=${category.slug}`}
+                    className="group relative flex aspect-[4/5] items-end overflow-hidden bg-velvet-silk"
+                  >
+                    <img
+                      src={optimizedImage(category.imageUrl, 600)}
+                      alt=""
+                      loading="lazy"
+                      decoding="async"
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-300 ease-out [@media(hover:hover)]:group-hover:scale-[1.03]"
+                    />
+                    <span className="relative w-full bg-gradient-to-t from-black/60 to-transparent px-4 pb-4 pt-10 font-display text-xl text-white">
+                      {category.name}
+                    </span>
+                  </Link>
+                ) : (
+                  <Link
+                    key={category.id}
+                    to={`/shop?category=${category.slug}`}
+                    className="group flex h-32 flex-col items-center justify-center bg-white text-center transition-colors hover:bg-velvet-silk/40"
+                  >
+                    <span className="font-display text-xl text-velvet-black/80 transition-colors group-hover:text-velvet-black">
+                      {category.name}
+                    </span>
+                  </Link>
+                )
               ))}
           {!isLoading && categories.length === 0 && (
             <p className="col-span-full bg-white py-10 text-center text-sm text-velvet-ash">
@@ -161,7 +180,7 @@ export default function Home() {
           <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
             <div className="flex items-end justify-between border-b border-velvet-black/10 pb-4">
               <h2 className="font-display text-2xl text-velvet-black">
-                Ofertas <span className="text-velvet-burgundy">especiales</span>
+                Ofertas
               </h2>
               <Link to="/shop?onSale=true" className="text-xs font-semibold uppercase tracking-label text-velvet-black/60 hover:text-velvet-black">
                 Ver todo →
@@ -181,9 +200,18 @@ export default function Home() {
         <div className="grid grid-cols-1 gap-px bg-velvet-black/10 sm:grid-cols-2 lg:grid-cols-4">
           {BENEFITS.map((benefit) => (
             <div key={benefit.title} className="bg-white px-6 py-8">
-              <span className="font-display text-sm text-velvet-ash">{benefit.n}</span>
-              <h3 className="mt-3 text-sm uppercase tracking-label text-velvet-black">{benefit.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-velvet-ash">{benefit.description}</p>
+              <h3 className="font-display text-lg text-velvet-black">{benefit.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-velvet-ash">
+                {benefit.description}
+                {benefit.to && (
+                  <>
+                    {" "}
+                    <Link to={benefit.to} className="text-velvet-black underline underline-offset-4">
+                      Cómo funciona
+                    </Link>
+                  </>
+                )}
+              </p>
             </div>
           ))}
         </div>

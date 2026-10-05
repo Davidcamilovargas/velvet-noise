@@ -75,7 +75,7 @@ function totalsTable(order: OrderRow): string {
     ["Subtotal", formatCurrency(order.subtotal)],
     ...(Number(order.discountTotal) > 0 ? ([["Descuento", `-${formatCurrency(order.discountTotal)}`]] as [string, string][]) : []),
     ["Envío", Number(order.shippingTotal) === 0 ? "Gratis" : formatCurrency(order.shippingTotal)],
-    ["Impuestos", formatCurrency(order.taxTotal)],
+    ["IVA incluido", formatCurrency(order.taxTotal)],
   ];
   const rowsHtml = rows
     .map(([label, value]) => `<tr><td style="padding: 2px 0; color: #64748b;">${label}</td><td style="padding: 2px 0; text-align: right; color: #64748b;">${value}</td></tr>`)

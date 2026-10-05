@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import type { ProductView360Frame } from "../../types/api";
+import { optimizedImage } from "../../utils/image";
 
 /**
  * Visor 360° interactivo: el cliente arrastra (mouse o dedo) sobre la foto
@@ -46,7 +47,7 @@ export function Product360Viewer({ frames }: { frames: ProductView360Frame[] }) 
   return (
     <div className="relative aspect-[4/5] overflow-hidden bg-velvet-silk">
       <img
-        src={sorted[frameIndex].url}
+        src={optimizedImage(sorted[frameIndex].url, 1200)}
         alt="Vista 360° del producto"
         draggable={false}
         className="h-full w-full select-none object-cover"

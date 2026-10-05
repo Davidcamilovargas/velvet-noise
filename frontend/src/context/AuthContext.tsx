@@ -10,6 +10,7 @@ interface AuthContextValue {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<User>;
   register: (payload: authService.RegisterPayload) => Promise<User>;
+  guestCheckout: (payload: authService.GuestCheckoutPayload) => Promise<User>;
   logout: () => Promise<void>;
 }
 
@@ -71,6 +72,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return newUser;
   }, []);
 
+  const guestCheckout = useCallback(async (payload: authService.GuestCheckoutPayload) => {
+    const guestUser = await authService.guestCheckoutRequest(payload);
+    setUser(guestUser);
+    await syncCartAfterLogin();
+    return guestUser;
+  }, []);
+
   const logout = useCallback(async () => {
     await authService.logoutRequest();
     setUser(null);
@@ -78,7 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, register, logout }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, isLoading, login, register, guestCheckout, logout }}>{children}</AuthContext.Provider>
   );
 }
 

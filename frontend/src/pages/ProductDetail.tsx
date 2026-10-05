@@ -1,5 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { fetchProductByIdOrSlug } from "../services/product.service";
 import { fetchProductReviews, createReview } from "../services/review.service";
 import { useAuth } from "../context/AuthContext";
@@ -15,6 +15,8 @@ import { Product360Viewer } from "../components/product/Product360Viewer";
 import { ZoomableImage } from "../components/product/ZoomableImage";
 import { ImageLightbox } from "../components/product/ImageLightbox";
 import { EmptyState } from "../components/ui/EmptyState";
+import { optimizedImage } from "../utils/image";
+import { whatsappLink } from "../config/store";
 
 type ProductWithRelated = Product & { relatedProducts: Product[] };
 
@@ -237,7 +239,7 @@ export default function ProductDetail() {
                 ) : (
                   <ZoomableImage
                     key={img.id}
-                    src={img.url}
+                    src={optimizedImage(img.url, 1200)}
                     alt={img.altText ?? product.name}
                     className="aspect-[4/5] bg-velvet-silk"
                     onClick={() => setLightboxIndex(stillImages.findIndex((i) => i.id === img.id))}
@@ -365,9 +367,34 @@ export default function ProductDetail() {
             </Button>
           </div>
 
-          <div className="mt-6 space-y-1.5 border border-velvet-black/10 bg-velvet-silk/40 p-4 text-xs text-velvet-ash">
-            <p>Envío estándar o express disponible al finalizar la compra.</p>
-            <p>Garantía directa del fabricante.</p>
+          {(() => {
+            const variantText = [selectedColor, selectedSize && `talla ${selectedSize}`].filter(Boolean).join(", ");
+            const wa = whatsappLink(
+              `Hola, tengo una pregunta sobre ${product.name}${variantText ? ` (${variantText})` : ""}: ${window.location.href}`
+            );
+            return (
+              wa && (
+                <a
+                  href={wa}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-3 flex w-full items-center justify-center gap-2 border border-velvet-black/15 py-3 text-sm text-velvet-black transition-colors hover:border-velvet-black"
+                >
+                  <WhatsAppIcon />
+                  Preguntar por WhatsApp
+                </a>
+              )
+            );
+          })()}
+
+          <div className="mt-6 space-y-1.5 border border-velvet-black/10 bg-velvet-silk/40 p-4 text-sm text-velvet-black/80">
+            <p>Envíos a todo Colombia. El costo se ve antes de pagar.</p>
+            <p>
+              ¿No te quedó la talla?{" "}
+              <Link to="/politicas/envios" className="underline underline-offset-4">
+                Cambios y devoluciones
+              </Link>
+            </p>
           </div>
 
           {/* Descripción / Detalles / Cuidados — igual patrón de acordeón que
@@ -493,12 +520,19 @@ export default function ProductDetail() {
           igual dónde vive en el árbol del componente. */}
       {lightboxIndex !== null && stillImages.length > 0 && (
         <ImageLightbox
-          images={stillImages.map((img) => ({ url: img.url, alt: img.altText ?? product.name }))}
+          images={stillImages.map((img) => ({ url: optimizedImage(img.url, 2000), alt: img.altText ?? product.name }))}
           index={lightboxIndex}
           onClose={() => setLightboxIndex(null)}
           onNavigate={setLightboxIndex}
         />
       )}
     </div>
+  );
+}
+function WhatsAppIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="currentColor">
+      <path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.94 1.17-.17.2-.35.22-.64.07-.3-.15-1.26-.46-2.4-1.48-.89-.79-1.49-1.77-1.66-2.07-.17-.3-.02-.46.13-.6.13-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.61-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.46 1.07 2.88 1.21 3.07.15.2 2.1 3.2 5.08 4.49.71.31 1.26.49 1.7.63.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.41-.07-.12-.27-.2-.57-.35zM12.04 21.5h-.01a9.45 9.45 0 01-4.82-1.32l-.35-.2-3.58.94.96-3.49-.23-.36a9.43 9.43 0 01-1.45-5.04c0-5.22 4.25-9.47 9.48-9.47 2.53 0 4.91.99 6.7 2.78a9.41 9.41 0 012.77 6.7c0 5.22-4.25 9.46-9.47 9.46zm8.06-17.53A11.32 11.32 0 0012.04.63C5.76.63.65 5.74.65 12.02c0 2.01.52 3.97 1.52 5.69L.55 23.6l6.04-1.58a11.36 11.36 0 005.44 1.38h.01c6.28 0 11.39-5.11 11.39-11.39 0-3.04-1.18-5.9-3.33-8.05z" />
+    </svg>
   );
 }

@@ -10,7 +10,7 @@ import type { Product } from "../../types/api";
 // para poder probar el componente sin envolverlo en todo el árbol de
 // providers reales ni golpear la red.
 vi.mock("../../context/AuthContext", () => ({
-  useAuth: () => ({ user: null, isLoading: false, login: vi.fn(), register: vi.fn(), logout: vi.fn() }),
+  useAuth: () => ({ user: null, isLoading: false, login: vi.fn(), register: vi.fn(), guestCheckout: vi.fn(), logout: vi.fn() }),
 }));
 
 function makeProduct(overrides: Partial<Product> = {}): Product {
@@ -79,15 +79,17 @@ describe("ProductCard", () => {
     expect(useCartStore.getState().lines[0].productId).toBe("p1");
   });
 
-  it("si el producto tiene más de una variante, pide elegir en el detalle en vez de un botón directo", () => {
+  it("si el producto tiene más de una variante, muestra las tallas con stock en vez de un botón directo", () => {
     const product = makeProduct({
       variants: [
         { id: "v1", color: "Rojo", size: "M", stock: 3, priceOverride: null, imageUrl: null, sku: "SKU-1-R", isDefault: true },
-        { id: "v2", color: "Azul", size: "M", stock: 2, priceOverride: null, imageUrl: null, sku: "SKU-1-A", isDefault: false },
+        { id: "v2", color: "Azul", size: "L", stock: 2, priceOverride: null, imageUrl: null, sku: "SKU-1-A", isDefault: false },
+        { id: "v3", color: "Azul", size: "XL", stock: 0, priceOverride: null, imageUrl: null, sku: "SKU-1-X", isDefault: false },
       ],
     });
     renderCard(product);
-    expect(screen.getByText(/Elige color\/talla/)).toBeInTheDocument();
+    expect(screen.getByRole("list", { name: "Tallas disponibles" })).toHaveTextContent(/^ML$/);
+    expect(screen.queryByText(/XL/)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Agregar al carrito" })).not.toBeInTheDocument();
   });
 });
