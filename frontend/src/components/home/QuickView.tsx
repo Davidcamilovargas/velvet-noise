@@ -31,6 +31,10 @@ export function QuickView({
   const [qty, setQty] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // onClose puede llegar como función nueva en cada render del padre; se lee
+  // desde una ref para no reiniciar el manejo de foco/scroll mientras está abierta.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   // Se conserva el último producto mientras el panel se cierra, para que la
   // animación de salida no muestre un panel vacío.
@@ -50,7 +54,7 @@ export function QuickView({
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCloseRef.current();
     addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -59,7 +63,7 @@ export function QuickView({
       document.body.style.overflow = prev;
       returnFocus.current?.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   const p = shown;
   const colors = useMemo(() => (p ? colorsOf(p) : []), [p]);

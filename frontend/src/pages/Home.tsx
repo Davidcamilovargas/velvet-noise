@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { fetchCategories, fetchProducts } from "../services/product.service";
 import type { Category, Product } from "../types/api";
 import { getApiErrorMessage } from "../services/api";
@@ -9,6 +9,8 @@ import { Manifesto } from "../components/home/Manifesto";
 import { DropShowcase } from "../components/home/DropShowcase";
 import { ShopGrid } from "../components/home/ShopGrid";
 import { QuickView } from "../components/home/QuickView";
+import { Toast } from "../components/home/Toast";
+import { useToast } from "../hooks/useToast";
 import "../styles/home.css";
 
 // Dirección "Ruido / entregas" (design/direction-approved.md): hero de video
@@ -32,8 +34,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quick, setQuick] = useState<Product | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
-  const toastTimer = useRef<number>();
+  const { message: toast, show: showToast } = useToast();
 
   useEffect(() => {
     let active = true;
@@ -52,11 +53,6 @@ export default function Home() {
     };
   }, []);
 
-  const showToast = useCallback((message: string) => {
-    setToast(message);
-    window.clearTimeout(toastTimer.current);
-    toastTimer.current = window.setTimeout(() => setToast(null), 2400);
-  }, []);
   const closeQuick = useCallback(() => setQuick(null), []);
 
   return (
@@ -89,15 +85,7 @@ export default function Home() {
 
       <QuickView product={quick} onClose={closeQuick} onAdded={showToast} />
 
-      <div
-        role="status"
-        aria-live="polite"
-        className={`pointer-events-none fixed left-1/2 top-24 z-[80] -translate-x-1/2 bg-black px-5 py-3 text-sm font-semibold text-velvet-silk transition-[opacity,transform] duration-200 ${
-          toast ? "translate-y-0 opacity-100" : "-translate-y-2 opacity-0"
-        }`}
-      >
-        {toast}
-      </div>
+      <Toast message={toast} />
     </div>
   );
 }

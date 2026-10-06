@@ -10,6 +10,9 @@ export interface ProductFilters {
   inStock?: boolean;
   onSale?: boolean;
   featured?: boolean;
+  /** Uno o varios separados por coma */
+  size?: string;
+  color?: string;
   page?: number;
   pageSize?: number;
 }

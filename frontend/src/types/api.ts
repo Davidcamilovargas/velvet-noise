@@ -84,6 +84,8 @@ export interface Product {
 export interface ProductListResponse {
   data: Product[];
   pagination: { page: number; pageSize: number; total: number; totalPages: number };
+  /** Tallas y colores con stock en el resultado (antes de filtrar por talla/color). */
+  facets?: { sizes: string[]; colors: string[] };
 }
 
 export type OrderStatus = "PENDING" | "PAID" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "REFUNDED";

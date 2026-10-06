@@ -12,7 +12,8 @@ export default mergeConfig(
   base,
   defineConfig({
     server: {
-      proxy: { "/api": { target: "https://velvetnoise-backend.onrender.com", changeOrigin: true } },
+      // VN_API_TARGET=http://localhost:4000 para probar contra un backend local.
+      proxy: { "/api": { target: process.env.VN_API_TARGET || "https://velvetnoise-backend.onrender.com", changeOrigin: true } },
     },
   })
 );

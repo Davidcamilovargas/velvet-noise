@@ -77,6 +77,9 @@ export const listProductsQuerySchema = z.object({
   inStock: z.coerce.boolean().optional(),
   onSale: z.coerce.boolean().optional(),
   featured: z.coerce.boolean().optional(),
+  // Uno o varios valores separados por coma: "S,M" o "Negro,Vino".
+  size: z.string().trim().max(200).optional(),
+  color: z.string().trim().max(200).optional(),
   page: z.coerce.number().int().min(1).optional().default(1),
   pageSize: z.coerce.number().int().min(1).max(60).optional().default(12),
 });

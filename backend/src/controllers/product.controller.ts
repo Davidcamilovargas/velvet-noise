@@ -7,10 +7,10 @@ import type { ListProductsQuery } from "../validators/product.validators";
 
 export const listProductsHandler = asyncHandler(async (req: Request, res: Response) => {
   const includeInactive = req.user?.role === "ADMIN" && req.query.all === "true";
-  const { data, pagination } = await productService.listProducts(req.query as unknown as ListProductsQuery, {
+  const { data, pagination, facets } = await productService.listProducts(req.query as unknown as ListProductsQuery, {
     includeInactive,
   });
-  okPaginated(res, data, pagination);
+  okPaginated(res, data, pagination, { facets });
 });
 
 export const getProductHandler = asyncHandler(async (req: Request, res: Response) => {

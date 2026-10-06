@@ -82,13 +82,40 @@ async function attachRelations(productRows: (typeof products.$inferSelect)[]) {
   });
 }
 
+function splitList(value?: string): string[] {
+  return value ? value.split(",").map((v) => v.trim()).filter(Boolean) : [];
+}
+
+const SIZE_ORDER = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+function compareSizes(a: string, b: string): number {
+  const ia = SIZE_ORDER.indexOf(a), ib = SIZE_ORDER.indexOf(b);
+  if (ia !== -1 || ib !== -1) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  const na = Number(a), nb = Number(b);
+  if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+  return a.localeCompare(b, "es");
+}
+
+function buildFacets(list: { variants: { size: string | null; color: string | null; stock: number }[] }[]) {
+  const sizes = new Set<string>(), colors = new Set<string>();
+  for (const p of list) {
+    for (const v of p.variants) {
+      if (v.stock <= 0) continue;
+      if (v.size) sizes.add(v.size);
+      if (v.color) colors.add(v.color);
+    }
+  }
+  return { sizes: [...sizes].sort(compareSizes), colors: [...colors].sort((a, b) => a.localeCompare(b, "es")) };
+}
+
 export async function listProducts(query: ListProductsQuery, options: { includeInactive?: boolean } = {}) {
   const conditions = [];
   if (!options.includeInactive) conditions.push(eq(products.isActive, true));
 
   if (query.category) {
     const category = await db.query.categories.findFirst({ where: eq(categories.slug, query.category) });
-    if (!category) return { data: [], pagination: { page: query.page, pageSize: query.pageSize, total: 0 } };
+    if (!category) {
+      return { data: [], pagination: { page: query.page, pageSize: query.pageSize, total: 0 }, facets: { sizes: [], colors: [] } };
+    }
     conditions.push(eq(products.categoryId, category.id));
   }
 
@@ -134,11 +161,28 @@ export async function listProducts(query: ListProductsQuery, options: { includeI
     withRelations = withRelations.filter((p) => p.compareAtPrice && Number(p.compareAtPrice) > Number(p.price));
   }
 
+  // Opciones de talla/color con stock, calculadas ANTES de filtrar por talla
+  // y color para que el filtro siempre muestre todo lo que se puede elegir.
+  const facets = buildFacets(withRelations);
+
+  const sizes = splitList(query.size);
+  const colors = splitList(query.color);
+  if (sizes.length || colors.length) {
+    withRelations = withRelations.filter((p) =>
+      p.variants.some(
+        (v) =>
+          v.stock > 0 &&
+          (!sizes.length || (v.size != null && sizes.includes(v.size))) &&
+          (!colors.length || (v.color != null && colors.includes(v.color)))
+      )
+    );
+  }
+
   const total = withRelations.length;
   const start = (query.page - 1) * query.pageSize;
   const data = withRelations.slice(start, start + query.pageSize);
 
-  return { data, pagination: { page: query.page, pageSize: query.pageSize, total } };
+  return { data, pagination: { page: query.page, pageSize: query.pageSize, total }, facets };
 }
 
 export async function getProductByIdOrSlug(idOrSlug: string, options: { includeInactive?: boolean } = {}) {

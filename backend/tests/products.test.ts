@@ -102,6 +102,24 @@ describe("Catálogo (productos y categorías)", () => {
     expect(res.body.data.every((p: { categoryId: string }) => p.categoryId === categoryId)).toBe(true);
   });
 
+  it("filtra por color con stock y devuelve las opciones de talla y color", async () => {
+    const category = await db.query.categories.findFirst({ where: eq(categories.id, categoryId) });
+    const all = await request(app).get(`/api/products?category=${category?.slug}`);
+    expect(all.body.facets.colors).toEqual(["Rojo", "Verde"]);
+
+    const rojo = await request(app).get(`/api/products?category=${category?.slug}&color=Rojo`);
+    expect(rojo.status).toBe(200);
+    expect(rojo.body.data.some((p: { sku: string }) => p.sku === `TEST-SKU-${suffix}`)).toBe(true);
+    // Las opciones no cambian al filtrar, para poder elegir otro color.
+    expect(rojo.body.facets.colors).toEqual(["Rojo", "Verde"]);
+
+    const azul = await request(app).get(`/api/products?category=${category?.slug}&color=Azul`);
+    expect(azul.body.data).toHaveLength(0);
+
+    const talla = await request(app).get(`/api/products?category=${category?.slug}&size=M`);
+    expect(talla.body.data).toHaveLength(0);
+  });
+
   it("devuelve 404 al pedir un producto que no existe", async () => {
     const res = await request(app).get("/api/products/producto-que-no-existe-xyz");
     expect(res.status).toBe(404);

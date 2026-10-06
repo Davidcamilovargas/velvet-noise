@@ -12,11 +12,13 @@ export function ok<T>(res: Response, data: T, statusCode = 200): Response {
 export function okPaginated<T>(
   res: Response,
   data: T[],
-  pagination: { page: number; pageSize: number; total: number }
+  pagination: { page: number; pageSize: number; total: number },
+  extra: Record<string, unknown> = {}
 ): Response {
   return res.status(200).json({
     data,
     pagination: { ...pagination, totalPages: Math.max(1, Math.ceil(pagination.total / pagination.pageSize)) },
+    ...extra,
   });
 }
 
