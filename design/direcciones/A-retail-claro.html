@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Velvet Noise — Dirección A · Retail claro</title>
+<!--
+  DIRECCIÓN A · RETAIL CLARO
+  Anclaje: plantillas comerciales de Shopify tipo Impulse / Dawn — chrome blanco,
+  el producto manda, todo lo que ayuda a comprar está a un toque.
+  Form desde el contenido: la tienda vende prendas con nombre de material
+  ("Terciopelo 450", "Grano 380"); la tarjeta pone ese dato técnico al frente.
+  Supuestos: no hay umbral de envío gratis (se muestra el costo real), la
+  dirección del punto de recogida está por confirmar, fotos = las actuales.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --black:#000; --silk:#EDEAE4; --wine:#431424; --midnight:#131C33; --burgundy:#8E2440; --ash:#6E6A68;
+  --white:#fff; --line:rgba(0,0,0,.1);
+  --ease-out:cubic-bezier(.23,1,.32,1);
+  --gutter:16px;
+}
+@media (min-width:768px){:root{--gutter:32px}}
+*{box-sizing:border-box;margin:0}
+body{font-family:Archivo,"Helvetica Neue",Arial,sans-serif;color:var(--black);background:var(--white);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--burgundy);outline-offset:2px}
+.wrap{max-width:1320px;margin:0 auto;padding:0 var(--gutter)}
+.label{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase}
+.display{font-family:"Bodoni Moda",Georgia,serif;font-weight:400;letter-spacing:-.01em}
+
+/* Barra de anuncios */
+.announce{background:var(--black);color:var(--silk);font-size:12px;text-align:center;padding:9px var(--gutter)}
+.announce b{font-weight:600}
+
+/* Header */
+header{position:sticky;top:0;z-index:30;background:var(--white);border-bottom:1px solid var(--line)}
+.bar{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;height:64px}
+.bar-left,.bar-right{display:flex;align-items:center;gap:4px}
+.bar-right{justify-content:flex-end}
+.icon-btn{width:44px;height:44px;display:grid;place-items:center}
+.logo img{height:40px;width:auto}
+.nav{display:none}
+@media (min-width:1024px){
+  .bar{grid-template-columns:auto 1fr auto}
+  .menu-toggle{display:none}
+  .nav{display:flex;gap:28px;margin-left:40px;height:64px}
+  .nav > li{list-style:none;display:flex;align-items:center}
+  .nav > li > button,.nav > li > a{font-size:14px;font-weight:500;height:100%;display:flex;align-items:center;border-bottom:2px solid transparent;transition:border-color .15s}
+  .nav > li > button[aria-expanded=true]{border-color:var(--black)}
+}
+.lang{font-size:12px;font-weight:600;padding:0 10px;height:44px}
+.cart-count[hidden]{display:none}
+.cart-count{position:absolute;top:8px;right:6px;min-width:16px;height:16px;border-radius:8px;background:var(--burgundy);color:#fff;font-size:10px;font-weight:600;display:grid;place-items:center;padding:0 4px}
+
+/* Mega menú: 2 niveles, máx. 5 ítems por columna */
+.mega{position:absolute;left:0;right:0;top:100%;background:var(--white);border-bottom:1px solid var(--line);
+  opacity:0;transform:translateY(-6px);pointer-events:none;transition:opacity .18s var(--ease-out),transform .18s var(--ease-out)}
+.mega.open{opacity:1;transform:none;pointer-events:auto}
+.mega-grid{display:grid;grid-template-columns:repeat(3,minmax(0,200px)) 1fr;gap:40px;padding:32px 0 40px}
+.mega h3{font-size:12px;color:var(--ash);font-weight:500;margin-bottom:12px}
+.mega ul{list-style:none;padding:0;display:grid;gap:10px}
+.mega ul a{font-size:15px}
+.mega ul a:hover{text-decoration:underline;text-underline-offset:4px}
+.mega-feature{display:grid;grid-template-columns:160px 1fr;gap:20px;align-items:end;background:var(--silk);padding:16px}
+.mega-feature img{aspect-ratio:4/5;object-fit:cover}
+
+/* Drawer de menú móvil */
+.drawer{position:fixed;inset:0;z-index:50;pointer-events:none}
+.drawer .scrim{position:absolute;inset:0;background:rgba(0,0,0,.4);opacity:0;transition:opacity .2s}
+.drawer .panel{position:absolute;top:0;bottom:0;left:0;width:min(88vw,380px);background:var(--white);transform:translateX(-100%);transition:transform .28s cubic-bezier(.32,.72,0,1);overflow-y:auto;padding:8px var(--gutter) 32px}
+.drawer.right .panel{left:auto;right:0;transform:translateX(100%)}
+.drawer.open{pointer-events:auto}
+.drawer.open .scrim{opacity:1}
+.drawer.open .panel{transform:none}
+.m-group{border-bottom:1px solid var(--line)}
+.m-group > button{width:100%;display:flex;justify-content:space-between;align-items:center;min-height:52px;font-size:17px}
+.m-group ul{list-style:none;padding:0 0 16px;display:none}
+.m-group.open ul{display:grid;gap:4px}
+.m-group ul a{display:block;padding:10px 0;color:#333}
+
+/* Hero */
+.hero{display:grid;background:var(--silk)}
+@media (min-width:900px){.hero{grid-template-columns:1.1fr 1fr;min-height:620px}}
+.hero-img{position:relative;aspect-ratio:4/5;overflow:hidden}
+@media (min-width:900px){.hero-img{aspect-ratio:auto}}
+.hero-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero-copy{padding:40px var(--gutter) 48px;display:flex;flex-direction:column;justify-content:center;max-width:560px}
+@media (min-width:900px){.hero-copy{padding:64px}}
+.hero-copy h1{font-size:clamp(40px,6vw,72px);line-height:1}
+.hero-copy p{margin-top:20px;color:#3a3735;max-width:40ch}
+.btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 26px;font-size:14px;font-weight:600;transition:transform .16s var(--ease-out),background-color .15s}
+.btn:active{transform:scale(.97)}
+.btn-dark{background:var(--black);color:var(--white)}
+.btn-line{border:1px solid var(--black)}
+
+/* Beneficios antes del catálogo */
+.benefits{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line)}
+@media (min-width:900px){.benefits{grid-template-columns:repeat(4,1fr)}}
+.benefit{padding:20px var(--gutter);border-right:1px solid var(--line);border-top:1px solid var(--line)}
+.benefit:nth-child(2n){border-right:0}
+@media (min-width:900px){.benefit{border-top:0}.benefit:nth-child(2n){border-right:1px solid var(--line)}.benefit:last-child{border-right:0}}
+.benefit strong{display:block;font-weight:600;font-size:14px}
+.benefit span{font-size:13px;color:var(--ash)}
+
+/* Secciones */
+section.block{padding-top:56px;padding-bottom:56px}
+.head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:24px}
+.head h2{font-size:clamp(26px,3vw,34px)}
+.head a{font-size:14px;font-weight:500;text-decoration:underline;text-underline-offset:4px}
+
+/* Categorías */
+.cats{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:4px}
+.cats a{flex:0 0 auto;scroll-snap-align:start;min-height:44px;display:flex;align-items:center;padding:0 20px;border:1px solid var(--line);font-size:14px;font-weight:500;transition:border-color .15s}
+@media (hover:hover){.cats a:hover{border-color:var(--black)}}
+
+/* Grilla de producto */
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 12px}
+@media (min-width:900px){.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:40px 20px}}
+.card{position:relative}
+.card-media{display:block;position:relative;aspect-ratio:4/5;background:var(--silk);overflow:hidden}
+.card-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:opacity .3s}
+.card-media img.alt{opacity:0}
+@media (hover:hover){.card:hover .card-media img.alt{opacity:1}}
+.tag{position:absolute;left:8px;top:8px;background:var(--white);font-size:11px;font-weight:600;padding:4px 8px}
+.tag.sale{background:var(--burgundy);color:#fff}
+.quick{position:absolute;left:8px;right:8px;bottom:8px;background:var(--white);padding:10px;
+  opacity:0;transform:translateY(6px);transition:opacity .18s var(--ease-out),transform .18s var(--ease-out)}
+@media (hover:hover){.card:hover .quick,.card:focus-within .quick{opacity:1;transform:none}}
+.quick p{font-size:12px;color:var(--ash);margin-bottom:6px}
+.sizes{display:flex;flex-wrap:wrap;gap:4px}
+.sizes button{min-width:40px;height:36px;border:1px solid var(--line);font-size:13px;transition:background-color .12s,color .12s}
+.sizes button:hover{background:var(--black);color:#fff}
+.quick-mobile{position:absolute;right:6px;bottom:6px;width:44px;height:44px;background:var(--white);display:grid;place-items:center}
+@media (hover:hover){.quick-mobile{display:none}}
+.card-info{padding-top:12px;display:grid;gap:2px}
+.card-info .name{font-size:14px;font-weight:500;overflow-wrap:anywhere}
+.card-info .tagline{font-size:12px;color:var(--ash)}
+.price{font-size:14px;font-weight:600;margin-top:4px}
+.price s{font-weight:400;color:var(--ash);margin-left:6px;font-size:13px}
+.swatches{display:flex;gap:6px;margin-top:6px}
+.swatches i{width:14px;height:14px;border:1px solid var(--line);display:block}
+
+/* Cápsula */
+.capsule{background:var(--wine);color:var(--silk);position:relative;overflow:hidden}
+.capsule .wrap{display:grid;gap:32px;padding-top:56px;padding-bottom:56px}
+@media (min-width:900px){.capsule .wrap{grid-template-columns:1fr 1.4fr;align-items:center}}
+.capsule h2{font-size:clamp(34px,4.5vw,56px);line-height:1.02}
+.capsule p{margin-top:16px;color:rgba(237,234,228,.75);max-width:42ch}
+.capsule .btn{background:var(--silk);color:var(--black);margin-top:28px}
+.capsule-pieces{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.capsule-pieces img{aspect-ratio:4/5;object-fit:cover;background:rgba(0,0,0,.2)}
+.capsule-pieces span{display:block;font-size:12px;margin-top:8px;color:rgba(237,234,228,.8)}
+
+/* Tienda / recogida */
+.store{display:grid;gap:24px;border:1px solid var(--line);padding:24px}
+@media (min-width:900px){.store{grid-template-columns:1fr 1fr 1fr;align-items:center;padding:40px}}
+.store h2{font-size:28px}
+.store dl{display:grid;gap:10px;font-size:14px}
+.store dt{color:var(--ash);font-size:12px}
+.placeholder{background:repeating-linear-gradient(45deg,#f3f1ec 0 10px,#ebe8e1 10px 20px);color:var(--ash);font-size:12px;display:grid;place-items:center;aspect-ratio:16/10;text-align:center;padding:12px}
+
+/* Newsletter + footer */
+.news{background:var(--silk)}
+.news .wrap{padding-top:48px;padding-bottom:48px;display:grid;gap:20px}
+@media (min-width:900px){.news .wrap{grid-template-columns:1fr 1fr;align-items:center}}
+.news h2{font-size:30px}
+.news form{display:flex;gap:8px}
+.news input{flex:1;min-height:48px;border:1px solid rgba(0,0,0,.25);background:var(--white);padding:0 14px;font:inherit;font-size:16px}
+footer{background:var(--black);color:var(--silk);padding:48px 0 28px;font-size:14px}
+.f-grid{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+@media (min-width:900px){.f-grid{grid-template-columns:2fr 1fr 1fr 1fr}}
+footer h4{font-size:12px;color:rgba(237,234,228,.6);font-weight:500;margin-bottom:12px}
+footer ul{list-style:none;padding:0;display:grid;gap:8px}
+footer .legal{border-top:1px solid rgba(237,234,228,.15);margin-top:40px;padding-top:20px;font-size:12px;color:rgba(237,234,228,.6);display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+
+/* WhatsApp flotante */
+.wa{position:fixed;right:16px;bottom:16px;z-index:40;height:52px;padding:0 18px 0 14px;background:var(--black);color:var(--white);display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;padding-bottom:env(safe-area-inset-bottom)}
+.wa svg{width:20px;height:20px}
+
+/* Toast de quick-add */
+.toast{position:fixed;left:50%;bottom:84px;transform:translate(-50%,12px);opacity:0;background:var(--black);color:#fff;padding:12px 18px;font-size:14px;transition:opacity .2s,transform .2s var(--ease-out);pointer-events:none;z-index:60}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="announce" data-i18n="announce">Envíos solo dentro de Colombia, desde <b>$12.000</b> · Recoge gratis en Bogotá</div>
+
+<header>
+  <div class="wrap bar">
+    <div class="bar-left">
+      <button class="icon-btn menu-toggle" aria-label="Abrir menú" data-open="menu-drawer">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h18M3 12h18M3 17h18"/></svg>
+      </button>
+      <a class="logo" href="#" aria-label="Velvet Noise, inicio"><img src="https://velvetnoise-frontend.onrender.com/brand/logo-principal-black.png" alt=""></a>
+      <ul class="nav" id="nav"></ul>
+    </div>
+    <div></div>
+    <div class="bar-right">
+      <button class="lang" id="lang" aria-label="Cambiar idioma">ES / EN</button>
+      <button class="icon-btn" aria-label="Buscar"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg></button>
+      <button class="icon-btn" style="position:relative" aria-label="Carrito, 0 prendas"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="cart-count" id="count" hidden>0</span></button>
+    </div>
+  </div>
+  <div class="mega" id="mega" role="region" aria-label="Tienda"><div class="wrap mega-grid" id="mega-grid"></div></div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-img"><img src="https://velvetnoise-frontend.onrender.com/products/pantalones/PAR1/jean-recto-crudo.jpg" alt="Jean Recto Crudo, vista frontal"></div>
+    <div class="hero-copy">
+      <span class="label" style="color:var(--ash)">Denim</span>
+      <h1 class="display" style="margin-top:14px">Rígido, sin lavar.</h1>
+      <p>Jean Recto Crudo. Denim rígido sin lavar, sin elastano. Cae recto de principio a fin. Tallas 30 a 36.</p>
+      <div class="btns">
+        <a class="btn btn-dark" href="#">Ver el jean · $169.000</a>
+        <a class="btn btn-line" href="#">Todo pantalones</a>
+      </div>
+    </div>
+  </section>
+
+  <div class="benefits" aria-label="Beneficios">
+    <div class="benefit"><strong>Envíos a todo Colombia</strong><span>Estándar 3-5 días hábiles, $12.000</span></div>
+    <div class="benefit"><strong>Express en 1-2 días</strong><span>$25.000, al finalizar la compra</span></div>
+    <div class="benefit"><strong>Recoge gratis</strong><span>Punto en Bogotá, sin costo</span></div>
+    <div class="benefit"><strong>Cambios de talla</strong><span>Antes de usar o lavar la prenda</span></div>
+  </div>
+
+  <section class="block wrap">
+    <div class="head"><h2 class="display">Comprar por categoría</h2></div>
+    <nav class="cats" aria-label="Categorías" id="cats"></nav>
+  </section>
+
+  <section class="block wrap" style="padding-top:0">
+    <div class="head"><h2 class="display">Lo más pedido</h2><a href="#">Ver todo</a></div>
+    <div class="grid" id="best"></div>
+  </section>
+
+  <section class="capsule">
+    <div class="wrap">
+      <div>
+        <span class="label" style="color:rgba(237,234,228,.6)">Cápsula</span>
+        <h2 class="display" style="margin-top:14px">Terciopelo por dentro</h2>
+        <p>Tres piezas con el lado suave hacia adentro: felpa perchada de 450 g, punto perchado y forro vino.</p>
+        <a class="btn" href="#">Ver la cápsula</a>
+      </div>
+      <div class="capsule-pieces" id="capsule"></div>
+    </div>
+  </section>
+
+  <section class="block wrap">
+    <div class="store">
+      <div><span class="label" style="color:var(--ash)">Punto de recogida</span><h2 class="display" style="margin-top:10px">Compra en línea, recoge en Bogotá</h2></div>
+      <dl>
+        <div><dt>Dirección</dt><dd>Por confirmar</dd></div>
+        <div><dt>Horario</dt><dd>Lunes a viernes, 8:00 a.m. – 6:00 p.m.</dd></div>
+        <div><dt>Costo</dt><dd>Gratis. Elige "Recoger en tienda" al pagar.</dd></div>
+      </dl>
+      <div class="placeholder">Foto del punto de recogida<br>(pendiente)</div>
+    </div>
+  </section>
+
+  <section class="news">
+    <div class="wrap">
+      <div><h2 class="display">Nuevas entregas, sin ruido</h2><p style="color:var(--ash);margin-top:8px">Un correo cuando sale algo nuevo. Nada más.</p></div>
+      <form onsubmit="event.preventDefault();toast('Listo. Te escribimos cuando salga la próxima entrega.')">
+        <label for="mail" class="label" style="position:absolute;left:-9999px">Correo</label>
+        <input id="mail" type="email" required placeholder="tu@correo.com" autocomplete="email">
+        <button class="btn btn-dark">Suscribirme</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="f-grid">
+      <div><img src="https://velvetnoise-frontend.onrender.com/brand/logo-principal.png" alt="Velvet Noise" style="height:30px;width:auto"><p style="margin-top:14px;color:rgba(237,234,228,.7);max-width:30ch">Ruido por fuera. Terciopelo por dentro.</p></div>
+      <div><h4>Tienda</h4><ul><li><a href="#">Novedades</a></li><li><a href="#">Ofertas</a></li><li><a href="#">Guía de tallas</a></li></ul></div>
+      <div><h4>Ayuda</h4><ul><li><a href="#">Envíos y cambios</a></li><li><a href="#">WhatsApp</a></li><li><a href="#">Mis pedidos</a></li></ul></div>
+      <div><h4>Legal</h4><ul><li><a href="#">Términos</a></li><li><a href="#">Privacidad</a></li></ul></div>
+    </div>
+    <div class="legal"><span>© 2026 Velvet Noise · Bogotá</span><span>Tarjeta, PSE y Nequi, procesados por Wompi</span></div>
+  </div>
+</footer>
+
+<a class="wa" href="#" aria-label="Escribir por WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.2 13.9c-.2.6-1.3 1.2-1.8 1.3-.5 0-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.9 2c.1.2.1.4 0 .6l-.4.6-.4.4c-.1.2-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.4 2.4 1.5.3.2.5.1.6-.1l.9-1c.2-.3.4-.2.7-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3Z"/></svg>WhatsApp</a>
+
+<div class="drawer" id="menu-drawer" aria-hidden="true">
+  <div class="scrim" data-close></div>
+  <nav class="panel" aria-label="Menú">
+    <div style="display:flex;justify-content:space-between;align-items:center;height:52px"><img src="https://velvetnoise-frontend.onrender.com/brand/logo-principal-black.png" alt="Velvet Noise" style="height:22px"><button class="icon-btn" data-close aria-label="Cerrar menú">✕</button></div>
+    <div id="m-groups"></div>
+  </nav>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="productos.js"></script>
+<script>
+const P = window.VN_PRODUCTS;
+const fmt = n => "$" + n.toLocaleString("es-CO");
+const SWATCH = {Negro:"#111","Blanco Seda":"#EDEAE4",Vino:"#431424","Azul Medianoche":"#131C33","Índigo Humo":"#26355C"};
+// Tagline de beneficio por producto: la primera frase de la descripción
+// real (material, gramaje, corte), no adjetivos inventados.
+const tagline = p => p.desc.split(". ")[0].replace(/\.$/, "");
+const MENU = [
+  {label:"Ropa", cols:[{t:"Arriba",items:["Camisetas","Sudaderas","Chaquetas"]},{t:"Abajo",items:["Pantalones","Jeans"]}]},
+  {label:"Accesorios", cols:[{t:"Accesorios",items:["Gorras y gorros","Bolsos","Medias"]}]},
+  {label:"Cápsulas", cols:[{t:"Activas",items:["Terciopelo por dentro","Denim crudo"]},{t:"Para todos los días",items:["Básicos"]}]},
+];
+
+// Header: nav desktop + mega menú
+const nav = document.getElementById("nav"), mega = document.getElementById("mega"), megaGrid = document.getElementById("mega-grid");
+let openIdx = -1, closeT;
+MENU.forEach((m,i)=>{
+  const li=document.createElement("li");
+  li.innerHTML=`<button aria-expanded="false" aria-controls="mega">${m.label}</button>`;
+  const b=li.firstChild;
+  const open=()=>{clearTimeout(closeT);renderMega(i)};
+  b.addEventListener("mouseenter",open);b.addEventListener("focus",open);
+  b.addEventListener("click",()=>openIdx===i?closeMega():renderMega(i));
+  li.addEventListener("mouseleave",()=>closeT=setTimeout(closeMega,120));
+  nav.appendChild(li);
+});
+const sale=document.createElement("li");sale.innerHTML='<a href="#">Ofertas</a>';nav.appendChild(sale);
+mega.addEventListener("mouseenter",()=>clearTimeout(closeT));mega.addEventListener("mouseleave",()=>closeT=setTimeout(closeMega,120));
+function renderMega(i){
+  openIdx=i;
+  nav.querySelectorAll("button").forEach((b,j)=>b.setAttribute("aria-expanded",j===i));
+  const m=MENU[i], feat=P.find(p=>p.name==="Hoodie Terciopelo 450");
+  megaGrid.innerHTML=m.cols.map(c=>`<div><h3>${c.t}</h3><ul>${c.items.map(x=>`<li><a href="#">${x}</a></li>`).join("")}</ul></div>`).join("")
+    + "<div></div>".repeat(3-m.cols.length)
+    + `<a class="mega-feature" href="#"><img src="${feat.img[0]}" alt=""><div><span class="label" style="color:var(--ash)">Cápsula</span><p class="display" style="font-size:22px;margin-top:6px">Terciopelo por dentro</p></div></a>`;
+  mega.classList.add("open");
+}
+function closeMega(){openIdx=-1;mega.classList.remove("open");nav.querySelectorAll("button").forEach(b=>b.setAttribute("aria-expanded","false"))}
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeMega();document.querySelectorAll(".drawer.open").forEach(closeDrawer)}});
+
+// Menú móvil (acordeón de 2 niveles)
+document.getElementById("m-groups").innerHTML = MENU.map(m=>`<div class="m-group"><button aria-expanded="false">${m.label}<span>+</span></button><ul>${m.cols.flatMap(c=>c.items).map(x=>`<li><a href="#">${x}</a></li>`).join("")}</ul></div>`).join("")
+ + `<div class="m-group"><button>Ofertas</button></div><div class="m-group"><button>Recoger en Bogotá</button></div>`;
+document.querySelectorAll(".m-group > button").forEach(b=>b.addEventListener("click",()=>{const g=b.parentElement;g.classList.toggle("open");b.setAttribute("aria-expanded",g.classList.contains("open"));const s=b.querySelector("span");if(s)s.textContent=g.classList.contains("open")?"−":"+"}));
+document.querySelectorAll("[data-open]").forEach(b=>b.addEventListener("click",()=>openDrawer(document.getElementById(b.dataset.open))));
+function openDrawer(d){d.classList.add("open");d.setAttribute("aria-hidden","false");d.querySelector("[data-close].icon-btn")?.focus()}
+function closeDrawer(d){d.classList.remove("open");d.setAttribute("aria-hidden","true")}
+document.querySelectorAll("[data-close]").forEach(el=>el.addEventListener("click",()=>closeDrawer(el.closest(".drawer"))));
+
+// Categorías
+document.getElementById("cats").innerHTML=["Novedades","Camisetas","Sudaderas","Chaquetas","Pantalones","Accesorios","Ofertas"].map(c=>`<a href="#">${c}</a>`).join("");
+
+// Tarjetas
+function card(p){
+  const off = p.compare ? Math.round((1-p.price/p.compare)*100) : 0;
+  const tag = p.stock<=0 ? '<span class="tag">Agotado</span>' : off ? `<span class="tag sale">−${off}%</span>` : "";
+  const sizes = p.sizes.length ? p.sizes : ["Única"];
+  return `<article class="card">
+    <a href="#" class="card-media" aria-label="${p.name}">
+      <img src="${p.img[0]}" alt="${p.name}" loading="lazy" decoding="async">
+      ${p.img[1]?`<img class="alt" src="${p.img[1]}" alt="" loading="lazy" decoding="async">`:""}
+      ${tag}
+    </a>
+    ${p.stock>0?`<div class="quick"><p>Agregar talla</p><div class="sizes">${sizes.map(s=>`<button data-add="${p.name}" data-size="${s}">${s}</button>`).join("")}</div></div>
+    <button class="quick-mobile" aria-label="Agregar ${p.name}" data-add="${p.name}" data-size="${sizes[0]}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg></button>`:""}
+    <div class="card-info">
+      <a href="#" class="name">${p.name}</a>
+      <span class="tagline">${tagline(p)}</span>
+      <span class="price">${fmt(p.price)}${p.compare?`<s>${fmt(p.compare)}</s>`:""}</span>
+      ${p.colors.length>1?`<span class="swatches" aria-label="Colores: ${p.colors.join(", ")}">${p.colors.map(c=>`<i style="background:${SWATCH[c]||"#bbb"}"></i>`).join("")}</span>`:""}
+    </div>
+  </article>`;
+}
+const best=["Hoodie Terciopelo 450","Camiseta Grano 380","Jean Recto Crudo","Bomber Satinada","Cargo Recto Noise","Hoodie Cropped","Gorra Símbolo","Cortavientos Órbita"].map(n=>P.find(p=>p.name===n));
+document.getElementById("best").innerHTML=best.map(card).join("");
+document.getElementById("capsule").innerHTML=["Hoodie Terciopelo 450","Jogger Terciopelo","Bolso Cruzado Terciopelo"].map(n=>{const p=P.find(x=>x.name===n);return `<a href="#"><img src="${p.img[0]}" alt="${p.name}" loading="lazy"><span>${p.name} · ${fmt(p.price)}</span></a>`}).join("");
+
+let count=0;
+document.addEventListener("click",e=>{const b=e.target.closest("[data-add]");if(!b)return;count++;const c=document.getElementById("count");c.hidden=false;c.textContent=count;toast(`${b.dataset.add}, talla ${b.dataset.size}, en tu carrito`)});
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2200)}
+
+// ES / EN (solo textos de navegación en el prototipo)
+let en=false;document.getElementById("lang").addEventListener("click",()=>{en=!en;document.documentElement.lang=en?"en":"es";document.querySelector("[data-i18n=announce]").innerHTML=en?"Shipping within Colombia only, from <b>$12.000</b> · Free pickup in Bogotá":"Envíos solo dentro de Colombia, desde <b>$12.000</b> · Recoge gratis en Bogotá"});
+</script>
+</body>
+</html>

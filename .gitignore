@@ -48,3 +48,6 @@ database/pgdata/
 # Misc
 *.tsbuildinfo
 .turbo/
+
+# Video de muestra pesado de los prototipos (14 MB); la tienda usa frontend/public/hero/hero.mp4
+design/direcciones/video/

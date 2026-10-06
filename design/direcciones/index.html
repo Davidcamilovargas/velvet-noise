@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Velvet Noise — Tres direcciones</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600&family=Bodoni+Moda:opsz@6..96&display=swap" rel="stylesheet">
+<style>
+:root{--black:#000;--silk:#EDEAE4;--ash:#6E6A68}
+*{box-sizing:border-box;margin:0}
+body{font-family:Archivo,Arial,sans-serif;background:var(--silk);color:var(--black);padding:40px 16px;line-height:1.5}
+h1{font-family:"Bodoni Moda",serif;font-weight:400;font-size:clamp(32px,5vw,52px);max-width:1200px;margin:0 auto}
+.intro{max-width:1200px;margin:12px auto 32px;color:#3a3735;max-width:62ch;margin-left:max(0px,calc((100% - 1200px)/2))}
+.row{display:grid;gap:24px;max-width:1200px;margin:0 auto}
+@media(min-width:1000px){.row{grid-template-columns:repeat(3,1fr)}}
+.d{background:#fff;border:1px solid rgba(0,0,0,.12);display:flex;flex-direction:column}
+.frame{position:relative;height:520px;overflow:hidden;border-bottom:1px solid rgba(0,0,0,.12)}
+.frame iframe{width:390px;height:844px;border:0;transform:scale(.616);transform-origin:0 0;position:absolute;left:calc(50% - 120px);top:0}
+.d .txt{padding:20px;display:grid;gap:8px}
+.d h2{font-family:"Bodoni Moda",serif;font-weight:400;font-size:26px}
+.d p{font-size:14px;color:#3a3735}
+.d a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;background:var(--black);color:#fff;font-weight:600;font-size:14px;text-decoration:none;margin-top:8px}
+</style>
+</head>
+<body>
+<h1>Tres direcciones para el Home</h1>
+<p class="intro">Misma marca, mismos productos y los mismos patrones de compra (beneficios antes del catálogo, compra rápida con talla, mega menú de dos niveles, WhatsApp, punto de recogida). Cambia la forma de contarlo. Ábrelas en pantalla completa y prueba el menú y los botones de talla.</p>
+<div class="row" style="margin-bottom:24px;grid-template-columns:1fr">
+  <div class="d" style="flex-direction:row;flex-wrap:wrap"><div class="frame" style="flex:1 1 320px;min-width:300px"><iframe src="C2-ruido-scroll.html" title="Vista móvil dirección C v2" loading="lazy"></iframe></div><div class="txt" style="flex:1 1 320px;align-content:center"><span style="font-size:12px;font-weight:600;color:#8E2440">Elegida</span><h2>C v2 · Ruido con scroll</h2><p>La dirección C con un hero a pantalla completa. Al bajar, la foto de calle (el ruido) se encoge y deja ver el terciopelo vino detrás, donde aparece "terciopelo por dentro". Después, una frase de materiales que se rellena palabra por palabra.</p><a href="C2-ruido-scroll.html">Abrir C v2</a></div></div>
+</div>
+<div class="row">
+  <div class="d"><div class="frame"><iframe src="A-retail-claro.html" title="Vista móvil dirección A" loading="lazy"></iframe></div><div class="txt"><h2>A · Retail claro</h2><p>Referencia: plantillas Impulse / Dawn de Shopify. Fondo blanco, el producto manda, compra rápida con talla al pasar el mouse, beneficios justo debajo del hero. La más directa para vender.</p><a href="A-retail-claro.html">Abrir A</a></div></div>
+  <div class="d"><div class="frame"><iframe src="B-editorial-terciopelo.html" title="Vista móvil dirección B" loading="lazy"></iframe></div><div class="txt"><h2>B · Editorial terciopelo</h2><p>Referencia: plantilla Prestige. Fondo negro, logo al centro, hero partido en "ruido" y "terciopelo", categorías tipográficas grandes y pocas piezas en carrusel. La más de marca.</p><a href="B-editorial-terciopelo.html">Abrir B</a></div></div>
+  <div class="d"><div class="frame"><iframe src="C-ruido-entregas.html" title="Vista móvil dirección C" loading="lazy"></iframe></div><div class="txt"><h2>C · Ruido / entregas</h2><p>Referencia: tiendas de streetwear por entregas y el tema Broadcast. Blanco Seda, letra ancha y pesada, cada prenda como ficha técnica con sus tallas a la vista y filtro fijo. La más streetwear.</p><a href="C-ruido-entregas.html">Abrir C</a></div></div>
+</div>
+</body>
+</html>

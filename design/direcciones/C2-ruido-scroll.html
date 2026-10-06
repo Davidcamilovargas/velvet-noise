@@ -1,0 +1,636 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Velvet Noise — Dirección C v2 · Ruido con scroll</title>
+<!--
+  DIRECCIÓN C · RUIDO / ENTREGAS
+  Anclaje: tiendas de streetwear por entregas (drops) y el tema Broadcast de
+  Shopify — tipografía grande y ancha, grilla densa, la colección como evento.
+  Form desde el contenido: el manual de marca habla de "nueva entrega, tres
+  piezas" y de etiquetas (talla, lote, sello) como la única mayúscula permitida.
+  Toda la página se arma como una hoja de etiquetas: cada prenda es una ficha
+  con su gramaje y sus tallas disponibles a la vista.
+  Supuestos: sin umbral de envío gratis; dirección del punto por confirmar;
+  la fecha de la entrega es ilustrativa.
+
+  v2 (dirección aprobada, ver ../direction-approved.md): hero a pantalla
+  completa con scroll. La foto de calle es el "ruido": al bajar se encoge y
+  deja ver detrás el terciopelo vino, donde aparece "terciopelo por dentro".
+  Después, una frase que se rellena palabra por palabra.
+  Foto del hero: MUESTRA CC0 (Brooke Cagle, Wikimedia/Unsplash) — reemplazar
+  por foto o video de campaña propio.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Bodoni+Moda:ital,opsz,wght@1,6..96,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --black:#000; --silk:#EDEAE4; --wine:#431424; --midnight:#131C33; --burgundy:#8E2440; --ash:#6E6A68;
+  --paper:#EDEAE4; --line:rgba(0,0,0,.16);
+  --ease-out:cubic-bezier(.23,1,.32,1);
+  --gutter:16px;
+}
+@media (min-width:768px){:root{--gutter:28px}}
+*{box-sizing:border-box;margin:0}
+body{font-family:Archivo,"Helvetica Neue",Arial,sans-serif;font-stretch:100%;background:var(--paper);color:var(--black);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--burgundy);outline-offset:2px}
+.wrap{padding-left:var(--gutter);padding-right:var(--gutter)}
+.wide{font-stretch:125%;font-weight:800;letter-spacing:-.02em;line-height:.9}
+.tag{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase}
+.velvet{font-family:"Bodoni Moda",serif;font-style:italic;font-weight:400;letter-spacing:0}
+
+/* Top: anuncio como cinta de etiqueta */
+.announce{display:flex;justify-content:space-between;gap:16px;background:var(--black);color:var(--paper);padding:8px var(--gutter);font-size:12px}
+.announce span:last-child{display:none}
+@media (min-width:768px){.announce span:last-child{display:inline}}
+
+header{position:sticky;top:0;z-index:30;background:var(--paper);border-bottom:1px solid var(--black)}
+.bar{display:flex;align-items:center;justify-content:space-between;height:56px}
+.logo img{height:38px;width:auto}
+.bar nav{display:flex;align-items:center}
+.btn-txt{min-height:44px;min-width:44px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;font-size:14px}
+.btn-txt[aria-expanded=true]{text-decoration:underline;text-underline-offset:4px}
+
+/* Menú a pantalla completa, 2 niveles */
+.overlay{position:fixed;inset:0;z-index:45;background:var(--black);color:var(--paper);display:grid;grid-template-rows:auto 1fr auto;
+  clip-path:inset(0 0 100% 0);transition:clip-path .32s cubic-bezier(.77,0,.175,1);visibility:hidden}
+.overlay.open{clip-path:inset(0);visibility:visible}
+.overlay .top{display:flex;justify-content:space-between;align-items:center;height:56px}
+.ov-grid{display:grid;gap:8px;align-content:start;padding-top:24px;overflow-y:auto}
+@media (min-width:900px){.ov-grid{grid-template-columns:1.2fr 1fr;gap:48px;padding-top:56px}}
+.ov-l1{list-style:none;padding:0}
+.ov-l1 button{font-size:clamp(44px,9vw,96px);text-align:left;opacity:.45;transition:opacity .15s;min-height:44px}
+.ov-l1 button[aria-current=true],.ov-l1 button:hover{opacity:1}
+.ov-l2{list-style:none;padding:0;display:grid;gap:2px;align-content:start}
+.ov-l2 a{display:flex;justify-content:space-between;border-bottom:1px solid rgba(237,234,228,.2);padding:14px 0;font-size:18px}
+.ov-l2 a span{color:rgba(237,234,228,.55);font-size:13px}
+.overlay .foot{display:flex;flex-wrap:wrap;gap:16px;padding-bottom:20px;font-size:13px;color:rgba(237,234,228,.7)}
+
+/* Beneficios como etiquetas cosidas */
+.labels{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--black)}
+@media (min-width:900px){.labels{grid-template-columns:repeat(4,1fr)}}
+.labels div{padding:16px var(--gutter);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.labels b{display:block;font-size:14px;font-stretch:112%}
+.labels span{font-size:13px;color:var(--ash)}
+
+/* Filtro + grilla densa */
+.shop-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:16px;padding-top:48px;padding-bottom:16px}
+.shop-head h2{font-size:clamp(40px,6vw,88px)}
+.chips{position:sticky;top:56px;z-index:10;background:var(--paper);display:flex;gap:8px;overflow-x:auto;padding:10px var(--gutter);border-top:1px solid var(--black);border-bottom:1px solid var(--black);scrollbar-width:none}
+.chips button{flex:0 0 auto;min-height:40px;padding:0 16px;border:1px solid var(--black);font-size:13px;font-weight:600;transition:background-color .12s,color .12s}
+.chips button[aria-pressed=true]{background:var(--black);color:var(--paper)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--black);border-bottom:1px solid var(--black)}
+@media (min-width:900px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.item{background:var(--paper);display:flex;flex-direction:column}
+.item .media{display:block;position:relative;aspect-ratio:4/5;overflow:hidden}
+.item .media img{width:100%;height:100%;object-fit:cover}
+.item .flag{position:absolute;right:0;top:0;background:var(--black);color:var(--paper);font-size:11px;font-weight:700;padding:6px 8px}
+.item .flag.sale{background:var(--burgundy)}
+.item .body{padding:12px;display:grid;gap:6px;flex:1;align-content:start}
+.item .row{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.item .name{font-weight:700;font-stretch:110%;font-size:15px;line-height:1.15;overflow-wrap:anywhere}
+.item .price{font-weight:600;white-space:nowrap}
+.item .price s{display:block;font-weight:400;color:var(--ash);font-size:12px;text-align:right}
+.item .gsm{font-size:12px;color:var(--ash)}
+.item .sizes{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.item .sizes button{min-width:44px;height:44px;border:1px solid var(--line);font-size:13px;font-weight:600;transition:border-color .12s,background-color .12s,color .12s}
+@media (hover:hover){.item .sizes button:hover{border-color:var(--black)}}
+.item .sizes button:active{background:var(--black);color:var(--paper)}
+.empty{grid-column:1/-1;background:var(--paper);padding:48px var(--gutter)}
+
+
+/* ---------- Tres piezas: recorrido horizontal ---------- */
+.showcase{background:var(--black);color:var(--paper);position:relative}
+.sc-pin{position:relative}
+.sc-head{display:flex;justify-content:space-between;align-items:end;gap:16px;padding:48px var(--gutter) 20px}
+.sc-head h2{font-size:clamp(48px,8vw,128px)}
+.sc-head h2 .velvet{display:block;font-size:.45em;margin-top:.15em;color:rgba(237,234,228,.8)}
+.sc-progress{height:2px;background:rgba(237,234,228,.15);margin:0 var(--gutter);position:relative}
+.sc-progress i{position:absolute;inset:0;background:var(--paper);transform-origin:0 50%;transform:scaleX(.33)}
+.sc-count{white-space:nowrap;font-size:13px;color:rgba(237,234,228,.7);font-variant-numeric:tabular-nums}
+.track{display:flex;gap:16px;padding:20px var(--gutter) 40px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:var(--gutter);scrollbar-width:none;overscroll-behavior-x:contain}
+.track::-webkit-scrollbar{display:none}
+.piece{flex:0 0 86%;scroll-snap-align:start;display:grid;gap:16px}
+.piece .ph{position:relative;aspect-ratio:4/5;overflow:hidden;background:#111}
+.piece .ph img{width:100%;height:100%;object-fit:cover;transform:scale(1.06);transition:transform 1.2s var(--ease-out)}
+.piece.on .ph img{transform:scale(1)}
+.piece .idx{position:absolute;left:12px;top:12px;font-weight:800;font-stretch:125%;font-size:14px;background:var(--black);padding:4px 8px}
+.piece h3{font-size:clamp(28px,4vw,56px);font-weight:800;font-stretch:120%;letter-spacing:-.02em;line-height:.95}
+.piece .d{color:rgba(237,234,228,.7);max-width:42ch}
+.piece .pr{font-size:20px;font-weight:600}
+.piece .pr s{font-size:14px;font-weight:400;color:rgba(237,234,228,.55);margin-left:8px}
+.piece .sz{display:flex;flex-wrap:wrap;gap:6px}
+.piece .sz button{min-width:48px;height:48px;border:1px solid rgba(237,234,228,.3);font-weight:600;transition:background-color .15s,color .15s,border-color .15s}
+.piece .sz button:hover{border-color:var(--paper)}
+.piece .sz button[aria-pressed=true]{background:var(--paper);color:var(--black);border-color:var(--paper)}
+.piece .add{min-height:52px;width:100%;background:var(--paper);color:var(--black);font-weight:700;font-stretch:112%;transition:transform .16s var(--ease-out),opacity .15s}
+.piece .add:disabled{opacity:.4;cursor:not-allowed}
+.piece .add:not(:disabled):active{transform:scale(.98)}
+@media (min-width:900px){
+  .piece{flex:0 0 min(78vw,1100px);grid-template-columns:1.15fr 1fr;gap:40px;align-items:end}
+  .piece .info{display:grid;gap:16px;padding-bottom:8px}
+}
+@media (min-width:900px) and (prefers-reduced-motion:no-preference){
+  .showcase.pinned{height:calc(100vh + var(--travel,200vh))}
+  .showcase.pinned .sc-pin{position:sticky;top:56px;height:calc(100vh - 56px);overflow:hidden;display:flex;flex-direction:column}
+  .showcase.pinned .sc-head{padding-top:28px;padding-bottom:14px}
+  .showcase.pinned .sc-head h2{font-size:clamp(40px,5.6vw,96px)}
+  .showcase.pinned .track{overflow:visible;scroll-snap-type:none;flex:1;min-height:0;align-items:stretch;will-change:transform;padding-top:20px;padding-bottom:28px}
+  .showcase.pinned .piece{height:100%;grid-template-columns:auto minmax(280px,1fr);flex-basis:auto;width:auto;max-width:1100px}
+  .showcase.pinned .piece .ph{height:100%;width:auto;aspect-ratio:4/5;min-height:0}
+}
+.piece .info{display:grid;gap:14px}
+
+/* ---------- Grilla "Todo" ---------- */
+.shop-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:16px;padding-top:64px;padding-bottom:20px}
+.shop-head h2{font-size:clamp(48px,8vw,128px)}
+.chips{position:sticky;top:56px;z-index:10;background:var(--paper);display:flex;gap:4px;overflow-x:auto;padding:8px var(--gutter);border-top:1px solid var(--black);border-bottom:1px solid var(--black);scrollbar-width:none}
+.chips .pill{position:absolute;top:8px;left:0;height:40px;background:var(--black);transition:transform .32s var(--ease-out),width .32s var(--ease-out);z-index:0}
+.chips button{position:relative;z-index:1;flex:0 0 auto;min-height:40px;padding:0 16px;border:0;font-size:13px;font-weight:600;transition:color .2s}
+.chips button[aria-pressed=true]{color:var(--paper);background:none}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px 12px;padding:24px var(--gutter) 64px;background:none;border:0}
+@media (min-width:900px){.grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:48px 20px}}
+.item{background:none;display:flex;flex-direction:column;opacity:0;transform:translateY(24px)}
+.item.in{opacity:1;transform:none;transition:opacity .6s var(--ease-out),transform .8s var(--ease-out);transition-delay:calc(var(--d) * 70ms)}
+.grid.leaving .item{opacity:0;transform:translateY(8px);transition:opacity .14s,transform .14s;transition-delay:0s}
+.item .media{display:block;position:relative;aspect-ratio:4/5;overflow:hidden;background:#e3dfd8;clip-path:inset(100% 0 0 0)}
+.item.in .media{clip-path:inset(0);transition:clip-path .9s cubic-bezier(.77,0,.175,1);transition-delay:calc(var(--d) * 70ms)}
+.item .media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transition:transform .7s var(--ease-out),opacity .4s}
+.item .media img.alt{opacity:0}
+.item .flag{position:absolute;left:0;top:0;right:auto;z-index:2;background:var(--black);color:var(--paper);font-size:11px;font-weight:700;padding:6px 8px}
+.item .flag.sale{background:var(--burgundy)}
+.quick{position:absolute;left:8px;right:8px;bottom:8px;z-index:2;background:var(--paper);padding:10px;display:grid;gap:8px;transform:translateY(calc(100% + 12px));transition:transform .3s var(--ease-out)}
+.quick .sizes{display:flex;flex-wrap:wrap;gap:4px}
+.quick .sizes button{min-width:40px;height:40px;border:1px solid var(--line);font-size:13px;font-weight:600;transition:background-color .12s,color .12s}
+.quick .sizes button:hover{background:var(--black);color:var(--paper)}
+.qv-open{font-size:12px;font-weight:600;text-decoration:underline;text-underline-offset:3px;justify-self:start;min-height:28px}
+@media (hover:hover) and (pointer:fine){
+  .item:hover .media img{transform:scale(1.05)}
+  .item:hover .media img.alt{opacity:1}
+  .item:hover .quick,.item:focus-within .quick{transform:none}
+}
+.item .body{padding:12px 0 0;display:grid;gap:4px}
+.item .row{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.item .name{font-weight:700;font-stretch:110%;font-size:15px;line-height:1.15;overflow-wrap:anywhere}
+.item .price{font-weight:600;white-space:nowrap}
+.item .price s{display:block;font-weight:400;color:var(--ash);font-size:12px;text-align:right}
+.item .gsm{font-size:12px;color:var(--ash)}
+.item .swatches{display:flex;gap:6px;margin-top:2px}
+.item .swatches i{width:12px;height:12px;border:1px solid var(--line)}
+.m-add{display:none}
+@media (hover:none),(pointer:coarse),(max-width:899px){
+  .quick{display:none}
+  .m-add{display:grid;place-items:center;position:absolute;right:6px;bottom:6px;z-index:2;width:44px;height:44px;background:var(--paper);font-size:22px;line-height:1}
+}
+.empty{grid-column:1/-1;padding:48px 0}
+
+/* ---------- Vista rápida ---------- */
+.qv{position:fixed;inset:0;z-index:70;pointer-events:none}
+.qv .scrim{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;transition:opacity .25s}
+.qv .sheet{position:absolute;left:0;right:0;bottom:0;max-height:88vh;overflow-y:auto;background:var(--paper);transform:translateY(100%);transition:transform .38s cubic-bezier(.32,.72,0,1);padding:0 var(--gutter) calc(20px + env(safe-area-inset-bottom))}
+@media (min-width:900px){.qv .sheet{left:auto;top:0;width:min(560px,92vw);max-height:none;transform:translateX(100%)}}
+.qv.open{pointer-events:auto}.qv.open .scrim{opacity:1}.qv.open .sheet{transform:none}
+.qv .grab{width:40px;height:4px;background:rgba(0,0,0,.25);margin:10px auto 6px}
+@media (min-width:900px){.qv .grab{display:none}}
+.qv .top{display:flex;justify-content:flex-end}
+.qv .gal{display:grid;grid-auto-flow:column;grid-auto-columns:80%;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
+.qv .gal img{aspect-ratio:4/5;object-fit:cover;scroll-snap-align:start;background:#e3dfd8}
+.qv h3{font-size:clamp(28px,4vw,40px);margin-top:16px}
+.qv .step{margin-top:18px}
+.qv .step > span{display:block;margin-bottom:8px}
+.qv .opts{display:flex;flex-wrap:wrap;gap:6px}
+.qv .opts button{min-width:48px;min-height:48px;padding:0 12px;border:1px solid var(--line);font-weight:600;transition:border-color .12s,background-color .12s,color .12s}
+.qv .opts button[aria-pressed=true]{background:var(--black);color:var(--paper);border-color:var(--black)}
+.qv .opts .sw{display:inline-block;width:14px;height:14px;border:1px solid var(--line);margin-right:8px;vertical-align:-2px}
+.qv .qty{display:flex;align-items:center;border:1px solid var(--line);width:fit-content}
+.qv .qty button{width:48px;height:48px;font-size:18px}
+.qv .qty output{min-width:32px;text-align:center;font-weight:600}
+.qv .cta{margin-top:20px;width:100%;min-height:56px;background:var(--black);color:var(--paper);font-weight:700;font-stretch:112%;transition:opacity .15s,transform .16s var(--ease-out)}
+.qv .cta:disabled{opacity:.35}
+.qv .cta:not(:disabled):active{transform:scale(.98)}
+.qv .aside{margin-top:14px;display:grid;gap:8px;font-size:13px;color:var(--ash)}
+.bump{animation:bump .35s var(--ease-out)}
+@keyframes bump{40%{transform:scale(1.25)}}
+
+/* Punto de recogida como sello */
+.stamp{display:grid;gap:24px;padding-top:56px;padding-bottom:56px;border-bottom:1px solid var(--black)}
+@media (min-width:900px){.stamp{grid-template-columns:1.2fr 1fr 1fr;align-items:end}}
+.stamp h2{font-size:clamp(36px,5vw,72px)}
+.stamp dl{display:grid;gap:8px;font-size:14px}
+.stamp dt{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+.ph{border:1px dashed var(--black);display:grid;place-items:center;aspect-ratio:4/3;font-size:13px;color:var(--ash);text-align:center;padding:12px}
+
+.news{background:var(--black);color:var(--paper)}
+.news .wrap{padding-top:56px;padding-bottom:56px;display:grid;gap:24px}
+@media (min-width:900px){.news .wrap{grid-template-columns:1fr 1fr;align-items:end}}
+.news h2{font-size:clamp(36px,5vw,72px)}
+.news form{display:flex;border:1px solid var(--paper)}
+.news input{flex:1;min-height:56px;background:transparent;border:0;color:var(--paper);padding:0 16px;font:inherit;font-size:16px}
+.news input::placeholder{color:rgba(237,234,228,.55)}
+.news button{padding:0 20px;background:var(--paper);color:var(--black);font-weight:700}
+
+footer{padding-top:40px;padding-bottom:28px;font-size:14px}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+@media (min-width:900px){.f{grid-template-columns:2fr repeat(3,1fr)}}
+footer ul{list-style:none;padding:0;display:grid;gap:8px;margin-top:10px}
+.legal{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;margin-top:40px;padding-top:16px;border-top:1px solid var(--black);font-size:12px;color:var(--ash)}
+
+.wa{position:fixed;left:var(--gutter);right:var(--gutter);bottom:12px;z-index:40;display:flex;justify-content:space-between;align-items:center;min-height:52px;padding:0 18px;background:var(--black);color:var(--paper);font-weight:700;margin-bottom:env(safe-area-inset-bottom);transition:transform .25s var(--ease-out)}
+@media (min-width:768px){.wa{left:auto;width:300px}}
+.wa.hide{transform:translateY(140%)}
+.toast{position:fixed;left:50%;top:72px;transform:translate(-50%,-8px);opacity:0;background:var(--black);color:var(--paper);padding:12px 18px;font-size:14px;font-weight:600;transition:opacity .18s,transform .18s var(--ease-out);pointer-events:none;z-index:60}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- v2: hero con scroll ---------- */
+.stage{position:relative;height:160vh;background:var(--black)}
+.pin{position:sticky;top:56px;height:calc(100vh - 56px);overflow:hidden;background:#000}
+/* Fondo: el mismo video, a baja resolución, ampliado y desenfocado */
+.pin .blur{position:absolute;inset:-8%;width:116%;height:116%;filter:blur(28px) saturate(1.25) brightness(.5);transform:translateZ(0)}
+.pin::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.07;mix-blend-mode:overlay;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>")}
+.frame{position:absolute;inset:0;will-change:clip-path;clip-path:inset(0 0 0 0)}
+.frame img,.frame video{width:100%;height:100%;object-fit:cover;filter:contrast(1.05) brightness(.85);transform:scale(1.08);will-change:transform}
+.frame::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,.55),rgba(0,0,0,0) 55%)}
+.sample{position:absolute;top:12px;right:12px;z-index:3;background:rgba(0,0,0,.6);color:var(--paper);font-size:11px;padding:4px 8px}
+.h-noise{position:absolute;left:var(--gutter);right:var(--gutter);bottom:clamp(24px,6vh,64px);z-index:2;color:var(--paper);will-change:transform,opacity}
+.h-noise h1{font-size:clamp(64px,15vw,240px)}
+.h-noise h1 .word{display:inline-block;white-space:nowrap}
+.h-noise h1 .ch{display:inline-block;opacity:0;transform:translateY(.4em)}
+.h-noise.in h1 .ch{opacity:1;transform:none;transition:opacity .5s var(--ease-out),transform .7s var(--ease-out);transition-delay:calc(var(--i) * 28ms)}
+.h-noise .meta{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;margin-top:20px}
+.h-noise .meta .tag{color:rgba(237,234,228,.8)}
+.ghost{display:inline-flex;align-items:center;min-height:48px;padding:0 22px;border:1px solid var(--paper);font-weight:700;font-size:14px;transition:background-color .2s,color .2s,transform .16s var(--ease-out)}
+.ghost:hover{background:var(--paper);color:var(--black)}
+.ghost:active{transform:scale(.97)}
+.h-velvet{position:absolute;left:var(--gutter);right:var(--gutter);bottom:clamp(64px,9vh,120px);text-align:center;z-index:2;color:var(--paper);opacity:0;will-change:transform,opacity}
+.h-velvet p{font-size:clamp(34px,6.4vw,104px);line-height:1}
+.scroll-cue{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:2;color:rgba(237,234,228,.7);font-size:12px;transition:opacity .2s}
+
+/* Frase que se rellena con el scroll */
+.manifesto{background:var(--paper);padding:18vh var(--gutter)}
+.manifesto p{font-weight:700;font-stretch:118%;font-size:clamp(30px,4.6vw,72px);line-height:1.05;letter-spacing:-.02em;max-width:18ch}
+.manifesto .w{opacity:.14;transition:opacity .2s linear}
+.manifesto .w.on{opacity:1}
+.manifesto .v{font-family:"Bodoni Moda",serif;font-style:italic;font-weight:400;font-stretch:100%;letter-spacing:0}
+
+@media (prefers-reduced-motion:reduce){
+  .stage{height:auto}
+  .pin{position:relative;top:0;height:calc(100vh - 56px)}
+  .frame{clip-path:inset(0 0 22vh 0)!important}
+  .frame img{transform:none!important}
+  .h-noise h1 .ch{opacity:1;transform:none}
+  .h-noise{bottom:calc(22vh + 24px)}
+  .h-velvet{opacity:1!important}
+  .manifesto .w{opacity:1}
+  .scroll-cue{display:none}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="announce"><span>Envíos solo en Colombia · desde $12.000</span><span>Recogida gratis en Bogotá · Cambios de talla</span></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="logo" href="#" aria-label="Velvet Noise, inicio"><img src="https://velvetnoise-frontend.onrender.com/brand/logo-principal-black.png" alt=""></a>
+    <nav aria-label="Principal">
+      <button class="btn-txt" id="lang" aria-label="Cambiar idioma">ES/EN</button>
+      <button class="btn-txt" aria-label="Buscar">Buscar</button>
+      <button class="btn-txt" aria-label="Bolsa">Bolsa <span id="count" style="margin-left:4px;display:inline-block">0</span></button>
+      <button class="btn-txt" id="open-menu" aria-expanded="false" aria-controls="overlay">Menú</button>
+    </nav>
+  </div>
+</header>
+
+<div class="overlay wrap" id="overlay" aria-hidden="true" role="dialog" aria-label="Menú">
+  <div class="top"><img src="https://velvetnoise-frontend.onrender.com/brand/logo-principal.png" alt="Velvet Noise" style="height:38px"><button class="btn-txt" id="close-menu">Cerrar</button></div>
+  <div class="ov-grid">
+    <ul class="ov-l1" id="l1"></ul>
+    <ul class="ov-l2" id="l2"></ul>
+  </div>
+  <div class="foot"><span>WhatsApp</span><span>Envíos y cambios</span><span>Recoger en Bogotá</span></div>
+</div>
+
+<main>
+  <section class="stage" id="stage" aria-label="Ruido por fuera. Terciopelo por dentro.">
+    <div class="pin">
+      <canvas class="blur" id="blur" width="64" height="36" aria-hidden="true"></canvas>
+      <div class="frame" id="frame">
+        <!-- Video de MUESTRA (dominio público, Wikimedia Commons: "Tokyo Walk").
+             Reemplazar por el video de campaña: MP4 H.264 + WebM, 8-12 s en loop,
+             sin audio, ~2-4 MB, con poster (primer cuadro) en JPG. -->
+        <video id="hero-video" autoplay muted loop playsinline preload="metadata" aria-hidden="true">
+          <source src="video/muestra-tokio-noche.webm" type="video/webm">
+        </video>
+      </div>
+      <span class="sample" style="z-index:4">Video de muestra · reemplazar por campaña propia</span>
+      <div class="h-noise" id="h-noise">
+        <h1 class="wide" id="h1">Ruido por fuera.</h1>
+        <div class="meta">
+          <span class="tag">Entrega · octubre 2026</span>
+          <a class="ghost" href="#entrega">Ver la entrega</a>
+        </div>
+      </div>
+      <div class="h-velvet" id="h-velvet" aria-hidden="true"><p class="velvet">terciopelo por dentro.</p></div>
+      <span class="scroll-cue" id="cue" aria-hidden="true">Baja</span>
+    </div>
+  </section>
+
+  <section class="manifesto" aria-label="Materiales">
+    <p id="manifesto">Denim rígido, sarga de algodón y nylon ripstop por fuera. <span class="v">Felpa perchada de 450 g y forro vino por dentro.</span></p>
+  </section>
+
+  <section class="showcase" id="entrega" aria-label="Tres piezas">
+    <div class="sc-pin">
+      <div class="sc-head">
+        <h2 class="wide">Tres piezas.<span class="velvet">entrega · octubre 2026</span></h2>
+        <span class="sc-count" id="sc-count">1 / 3</span>
+      </div>
+      <div class="sc-progress" aria-hidden="true"><i id="sc-bar"></i></div>
+      <div class="track" id="track"></div>
+    </div>
+  </section>
+
+  <div class="labels" aria-label="Beneficios">
+    <div><b>Envíos a Colombia</b><span>3-5 días · $12.000</span></div>
+    <div><b>Express</b><span>1-2 días · $25.000</span></div>
+    <div><b>Recoge en Bogotá</b><span>Sin costo</span></div>
+    <div><b>Cambios de talla</b><span>Sin usar ni lavar</span></div>
+  </div>
+
+  <div class="wrap shop-head" id="todo"><h2 class="wide">Todo</h2><span class="tag" style="color:var(--ash)" id="n-items"></span></div>
+  <div class="chips" role="group" aria-label="Filtrar por categoría" id="chips"></div>
+  <section class="grid" id="grid" aria-live="polite"></section>
+
+  <section class="wrap stamp">
+    <h2 class="wide">Recoge<br>en Bogotá.</h2>
+    <dl>
+      <div><dt>Dirección</dt><dd>Por confirmar</dd></div>
+      <div><dt>Horario</dt><dd>Lunes a viernes, 8:00 a.m. – 6:00 p.m.</dd></div>
+      <div><dt>Costo</dt><dd>$0. Elige "Recoger en tienda" al pagar.</dd></div>
+    </dl>
+    <div class="ph">Foto del punto (pendiente)</div>
+  </section>
+
+  <section class="news">
+    <div class="wrap">
+      <h2 class="wide">Próxima<br>entrega.</h2>
+      <form onsubmit="event.preventDefault();toast('Anotado. Te avisamos.')">
+        <label for="m" style="position:absolute;left:-9999px">Correo</label>
+        <input id="m" type="email" required placeholder="tu@correo.com" autocomplete="email">
+        <button>Avisarme</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <div class="f">
+    <div><img src="https://velvetnoise-frontend.onrender.com/brand/logo-principal-black.png" alt="Velvet Noise" style="height:44px"></div>
+    <div><span class="tag">Tienda</span><ul><li><a href="#">Todo</a></li><li><a href="#">Entregas anteriores</a></li><li><a href="#">Guía de tallas</a></li></ul></div>
+    <div><span class="tag">Ayuda</span><ul><li><a href="#">Envíos y cambios</a></li><li><a href="#">WhatsApp</a></li><li><a href="#">Mis pedidos</a></li></ul></div>
+    <div><span class="tag">Legal</span><ul><li><a href="#">Términos</a></li><li><a href="#">Privacidad</a></li></ul></div>
+  </div>
+  <div class="legal"><span>© 2026 Velvet Noise · Bogotá</span><span>Tarjeta, PSE y Nequi vía Wompi</span></div>
+</footer>
+
+<a class="wa" href="#" id="wa"><span>¿Dudas con la talla?</span><span>WhatsApp</span></a>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div class="qv" id="qv" aria-hidden="true">
+  <div class="scrim" data-qv-close></div>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="qv-name"><div class="grab"></div><div class="top"><button class="btn-txt" data-qv-close>Cerrar</button></div><div id="qv-body"></div></div>
+</div>
+
+<script src="productos.js"></script>
+<script>
+const P=window.VN_PRODUCTS, by=n=>P.find(p=>p.name===n), fmt=n=>"$"+n.toLocaleString("es-CO");
+const spec=p=>{const m=p.desc.match(/(\d+)\s?(g|oz)\b/);return m?m[0]:p.desc.split(/[.,]/)[0]};
+
+const SW={Negro:"#111","Blanco Seda":"#EDEAE4",Vino:"#431424","Azul Medianoche":"#131C33","Índigo Humo":"#26355C"};
+const first=p=>p.desc.split(". ")[0].replace(/\.$/,"");
+const reduceMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+// ---------- Tres piezas ----------
+const drop=["Hoodie Terciopelo 450","Jean Recto Crudo","Bomber Satinada"].map(by);
+const track=document.getElementById("track");
+track.innerHTML=drop.map((p,i)=>`<article class="piece" data-i="${i}">
+  <a href="#" class="ph" aria-label="${p.name}"><img src="${p.img[0]}" alt="${p.name}" ${i?'loading="lazy"':""}><span class="idx">${i+1}/3</span></a>
+  <div class="info">
+    <h3>${p.name}</h3>
+    <p class="d">${p.desc}</p>
+    <p class="pr">${fmt(p.price)}${p.compare?`<s>${fmt(p.compare)}</s>`:""}</p>
+    <div class="sz" role="group" aria-label="Talla">${(p.sizes.length?p.sizes:["Única"]).map(s=>`<button aria-pressed="false" data-size="${s}">${s}</button>`).join("")}</div>
+    <button class="add" disabled data-piece="${p.name}">Elige una talla</button>
+  </div></article>`).join("");
+track.addEventListener("click",e=>{
+  const sz=e.target.closest(".sz button");
+  if(sz){const piece=sz.closest(".piece");piece.querySelectorAll(".sz button").forEach(b=>b.setAttribute("aria-pressed",b===sz));const add=piece.querySelector(".add");add.disabled=false;add.dataset.size=sz.dataset.size;add.textContent=`Agregar talla ${sz.dataset.size}`;return}
+  const add=e.target.closest(".add");if(add&&!add.disabled)addToBag(add.dataset.piece,add.dataset.size);
+});
+(function(){
+  const sec=document.getElementById("entrega"),pin=sec.querySelector(".sc-pin"),bar=document.getElementById("sc-bar"),count=document.getElementById("sc-count");
+  const pieces=[...track.children];
+  const setActive=i=>{pieces.forEach((p,j)=>p.classList.toggle("on",j===i));count.textContent=`${i+1} / 3`;};
+  setActive(0);
+  const desktop=matchMedia("(min-width: 900px)");
+  let travel=0,target=0,cur=0,run=false,last=0;
+  function measure(){
+    if(!desktop.matches||reduceMotion){sec.classList.remove("pinned");track.style.transform="";return}
+    sec.classList.add("pinned");
+    const lastPiece=pieces[pieces.length-1];
+    // Recorrido = hasta que el borde derecho de la última pieza quede a un margen del borde de la pantalla
+    const gutter=parseFloat(getComputedStyle(track).paddingLeft)||0;
+    travel=Math.max(0,lastPiece.offsetLeft+lastPiece.offsetWidth+gutter-innerWidth);
+    sec.style.setProperty("--travel",travel+"px");
+  }
+  function read(){const r=sec.getBoundingClientRect();target=Math.min(1,Math.max(0,-r.top/Math.max(1,r.height-innerHeight)))}
+  function draw(p){track.style.transform=`translate3d(${-travel*p}px,0,0)`;bar.style.transform=`scaleX(${(1+p*2)/3})`;setActive(Math.min(2,Math.round(p*2)))}
+  function loop(now){const dt=Math.min(64,now-last);last=now;cur+=(target-cur)*(1-Math.pow(1-.14,dt/16.7));if(Math.abs(target-cur)<.0005)cur=target;draw(cur);if(cur!==target)requestAnimationFrame(loop);else run=false}
+  function kick(){if(!sec.classList.contains("pinned"))return;read();if(!run){run=true;last=performance.now();requestAnimationFrame(loop)}}
+  // Celular / sin animación: el usuario desliza con el dedo, solo se actualiza el contador.
+  track.addEventListener("scroll",()=>{if(sec.classList.contains("pinned"))return;const w=pieces[0].getBoundingClientRect().width+16;const i=Math.round(track.scrollLeft/w);setActive(Math.min(2,i));bar.style.transform=`scaleX(${(i+1)/3})`},{passive:true});
+  addEventListener("scroll",kick,{passive:true});
+  addEventListener("resize",()=>{measure();kick()});
+  measure();read();cur=target;if(sec.classList.contains("pinned"))draw(cur);
+  track.querySelectorAll("img").forEach(i=>i.addEventListener("load",()=>{measure();kick()}));
+  document.fonts?.ready.then(()=>{measure();kick()});
+})();
+
+// ---------- Grilla "Todo" ----------
+const CATS=["Todo","Camisetas","Sudaderas","Chaquetas","Pantalones","Accesorios","Ofertas"];let cur="Todo";
+const chips=document.getElementById("chips"),grid=document.getElementById("grid");
+chips.innerHTML=`<span class="pill" aria-hidden="true"></span>`+CATS.map(c=>`<button aria-pressed="${c===cur}">${c}</button>`).join("");
+const pill=chips.querySelector(".pill");
+function movePill(){const b=chips.querySelector('[aria-pressed="true"]');pill.style.width=b.offsetWidth+"px";pill.style.transform=`translateX(${b.offsetLeft}px)`}
+chips.addEventListener("click",e=>{const b=e.target.closest("button");if(!b||b.getAttribute("aria-pressed")==="true")return;cur=b.textContent;chips.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));movePill();
+  if(reduceMotion){render();return}
+  grid.classList.add("leaving");setTimeout(()=>{grid.classList.remove("leaving");render()},150)});
+addEventListener("resize",movePill);
+
+const io=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting){en.target.classList.add("in");io.unobserve(en.target)}}),{rootMargin:"0px 0px -8% 0px"});
+function card(p,i){
+  const off=p.compare?Math.round((1-p.price/p.compare)*100):0,sold=p.stock<=0,sizes=p.sizes.length?p.sizes:["Única"];
+  return `<article class="item" style="--d:${i%4}">
+    <a href="#" class="media" aria-label="${p.name}">
+      <img src="${p.img[0]}" alt="${p.name}" loading="lazy" decoding="async">${p.img[1]?`<img class="alt" src="${p.img[1]}" alt="" loading="lazy" decoding="async">`:""}
+      ${sold?'<span class="flag">Agotado</span>':off?`<span class="flag sale">−${off}%</span>`:""}
+    </a>
+    ${sold?"":`<div class="quick"><div class="sizes" aria-label="Agregar talla">${sizes.map(s=>`<button data-add="${p.name}" data-size="${s}" aria-label="Agregar ${p.name} talla ${s}">${s}</button>`).join("")}</div><button class="qv-open" data-qv="${p.name}">Vista rápida</button></div>
+    <button class="m-add" data-qv="${p.name}" aria-label="Elegir talla de ${p.name}">+</button>`}
+    <div class="body"><div class="row"><a href="#" class="name">${p.name}</a><span class="price">${fmt(p.price)}${p.compare?`<s>${fmt(p.compare)}</s>`:""}</span></div>
+      <span class="gsm">${sold?"Agotado. Se repone cuando se acaba.":first(p)}</span>
+      ${p.colors.length>1?`<span class="swatches" aria-label="Colores: ${p.colors.join(", ")}">${p.colors.map(c=>`<i style="background:${SW[c]||"#bbb"}"></i>`).join("")}</span>`:""}
+    </div></article>`;
+}
+function render(){
+  const list=P.filter(p=>cur==="Todo"||(cur==="Ofertas"?p.compare:p.cat===cur));
+  document.getElementById("n-items").textContent=`${list.length} piezas`;
+  grid.innerHTML=list.length?list.map(card).join("")
+    :`<div class="empty"><p class="wide" style="font-size:40px">Nada aquí.</p><p style="margin-top:8px;color:var(--ash)">No hay piezas en esta categoría ahora. <button style="text-decoration:underline" onclick="chips.querySelector('button').click()">Ver todo</button></p></div>`;
+  grid.querySelectorAll(".item").forEach(el=>reduceMotion?el.classList.add("in"):io.observe(el));
+}
+render();requestAnimationFrame(movePill);
+
+// ---------- Vista rápida: color y talla ANTES de la cantidad ----------
+const qv=document.getElementById("qv"),qvBody=document.getElementById("qv-body");let qvLast=null;
+function openQV(name){
+  const p=by(name);qvLast=document.activeElement;
+  const sizes=p.sizes.length?p.sizes:["Única"];
+  qvBody.innerHTML=`<div class="gal">${p.img.map(u=>`<img src="${u}" alt="${p.name}">`).join("")}</div>
+    <h3 class="wide" id="qv-name">${p.name}</h3>
+    <p style="margin-top:6px;font-size:18px;font-weight:600">${fmt(p.price)}${p.compare?` <s style="font-weight:400;color:var(--ash);font-size:14px">${fmt(p.compare)}</s>`:""}</p>
+    <p style="margin-top:8px;color:var(--ash)">${p.desc}</p>
+    ${p.colors.length?`<div class="step"><span class="tag">1 · Color</span><div class="opts" data-group="color">${p.colors.map((c,i)=>`<button aria-pressed="${i===0}" data-v="${c}"><span class="sw" style="background:${SW[c]||"#bbb"}"></span>${c}</button>`).join("")}</div></div>`:""}
+    <div class="step"><span class="tag">${p.colors.length?"2":"1"} · Talla</span><div class="opts" data-group="size">${sizes.map(s=>`<button aria-pressed="${sizes.length===1}" data-v="${s}">${s}</button>`).join("")}</div></div>
+    <div class="step"><span class="tag">${p.colors.length?"3":"2"} · Cantidad</span><div class="qty"><button data-q="-1" aria-label="Menos">−</button><output id="qv-q">1</output><button data-q="1" aria-label="Más">+</button></div></div>
+    <button class="cta" id="qv-add" ${sizes.length===1?"":"disabled"}>${sizes.length===1?"Agregar a la bolsa":"Elige una talla"}</button>
+    <div class="aside"><span>Paga en cuotas con ADDI <em>(por integrar)</em></span><a href="#" style="text-decoration:underline">¿Dudas con la talla? Escríbenos por WhatsApp</a><a href="#" style="text-decoration:underline">Ver ficha completa</a></div>`;
+  let q=1,size=sizes.length===1?sizes[0]:null;
+  qvBody.onclick=e=>{
+    const o=e.target.closest(".opts button");
+    if(o){o.parentElement.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b===o));if(o.parentElement.dataset.group==="size"){size=o.dataset.v;const a=document.getElementById("qv-add");a.disabled=false;a.textContent=`Agregar talla ${size}`}return}
+    const d=e.target.closest("[data-q]");if(d){q=Math.max(1,Math.min(p.stock||1,q+ +d.dataset.q));document.getElementById("qv-q").textContent=q;return}
+    if(e.target.id==="qv-add"&&size){addToBag(p.name,size,q);closeQV()}
+  };
+  qv.classList.add("open");qv.setAttribute("aria-hidden","false");qv.querySelector(".top button").focus();
+}
+function closeQV(){qv.classList.remove("open");qv.setAttribute("aria-hidden","true");qvLast?.focus()}
+qv.querySelectorAll("[data-qv-close]").forEach(el=>el.addEventListener("click",closeQV));
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&qv.classList.contains("open"))closeQV()});
+document.addEventListener("click",e=>{const b=e.target.closest("[data-qv]");if(b){e.preventDefault();openQV(b.dataset.qv)}});
+
+// Menú a pantalla completa
+const L={"Ropa":["Camisetas","Sudaderas","Chaquetas","Pantalones"],"Entregas":["Octubre 2026","Anteriores","Básicos"],"Accesorios":["Gorras y gorros","Bolsos","Medias"]};
+const l1=document.getElementById("l1"),l2=document.getElementById("l2");
+l1.innerHTML=Object.keys(L).map((k,i)=>`<li><button class="wide" aria-current="${i===0}">${k}</button></li>`).join("");
+function showL2(k){l2.innerHTML=L[k].map(x=>{const n=P.filter(p=>p.cat===x).length;return `<li><a href="#">${x}${n?`<span>${n}</span>`:""}</a></li>`}).join("")}
+showL2("Ropa");
+l1.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;l1.querySelectorAll("button").forEach(x=>x.setAttribute("aria-current",x===b));showL2(b.textContent)});
+const ov=document.getElementById("overlay"),om=document.getElementById("open-menu");
+om.addEventListener("click",()=>{ov.classList.add("open");ov.setAttribute("aria-hidden","false");om.setAttribute("aria-expanded","true");document.getElementById("close-menu").focus()});
+function closeOv(){ov.classList.remove("open");ov.setAttribute("aria-hidden","true");om.setAttribute("aria-expanded","false");om.focus()}
+document.getElementById("close-menu").addEventListener("click",closeOv);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&ov.classList.contains("open"))closeOv()});
+
+let n=0;
+function addToBag(name,size,q=1){n+=q;const c=document.getElementById("count");c.textContent=n;c.classList.remove("bump");void c.offsetWidth;c.classList.add("bump");toast(`${name} · talla ${size} — en la bolsa`)}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-add]");if(!b)return;addToBag(b.dataset.add,b.dataset.size)});
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2000)}
+// La barra de WhatsApp se esconde sobre el hero y el footer para no tapar
+// el titular ni los enlaces legales.
+const waHide = new Set();
+new IntersectionObserver(es=>{es.forEach(e=>e.isIntersecting?waHide.add(e.target):waHide.delete(e.target));document.getElementById("wa").classList.toggle("hide",waHide.size>0)},{threshold:0.15}).observe(document.querySelector("footer"));
+const stageEl = document.getElementById("stage");
+function waOverHero(){ const onHero = stageEl.getBoundingClientRect().bottom > innerHeight * 0.6; onHero ? waHide.add(stageEl) : waHide.delete(stageEl); document.getElementById("wa").classList.toggle("hide", waHide.size > 0); }
+addEventListener("scroll", waOverHero, {passive:true}); waOverHero();
+
+// ---------- v2: hero con scroll ----------
+(function(){
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  // Titular letra por letra (una sola entrada orquestada al cargar)
+  const h1 = document.getElementById("h1");
+  const text = h1.textContent; h1.setAttribute("aria-label", text);
+  let k = 0;
+  h1.innerHTML = text.split(" ").map(word=>`<span class="word" aria-hidden="true">${word.split("").map(c=>`<span class="ch" style="--i:${k++}">${c}</span>`).join("")}</span>`).join(" ");
+  setTimeout(()=>document.getElementById("h-noise").classList.add("in"), 60);
+
+  // Frase: cada palabra es un span
+  const man = document.getElementById("manifesto");
+  const wrapWords = node => { [...node.childNodes].forEach(n=>{
+    if(n.nodeType===3){ const f=document.createDocumentFragment(); n.textContent.split(/(\s+)/).forEach(t=>{ if(!t)return; if(/^\s+$/.test(t)) f.append(t); else { const sp=document.createElement("span"); sp.className="w"; sp.textContent=t; f.append(sp);} }); n.replaceWith(f); }
+    else wrapWords(n); }); };
+  wrapWords(man);
+  const words = [...man.querySelectorAll(".w")];
+  if (reduce) { const v = document.getElementById("hero-video"); if (v) { v.removeAttribute("autoplay"); v.pause(); } return; }
+
+  const stage = document.getElementById("stage"), frame = document.getElementById("frame"), media = frame.firstElementChild;
+  const noise = document.getElementById("h-noise"), velvet = document.getElementById("h-velvet"), cue = document.getElementById("cue");
+  const clamp = (v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+  const ease = t => 1 - Math.pow(1 - t, 3);
+
+  // Progreso con inercia: la animación persigue al scroll en vez de ir
+  // pegada a él. Se siente fluido con rueda, trackpad y dedo.
+  let target = 0, current = 0, last = performance.now(), running = false;
+  function readTarget(){
+    const r = stage.getBoundingClientRect();
+    target = clamp(-r.top / (r.height - innerHeight));
+  }
+  function render(p){
+    const e = ease(p);
+    const mobile = innerWidth < 768;
+    const side = (mobile ? 5 : 12) * e, top = (mobile ? 7 : 8) * e, bottom = (mobile ? 26 : 28) * e;
+    frame.style.clipPath = `inset(${top}% ${side}% ${bottom}% ${side}%)`;
+    media.style.transform = `scale(${1.08 - .08 * e})`;
+    noise.style.opacity = 1 - clamp((p - .1) / .4);
+    noise.style.transform = `translateY(${-48 * e}px)`;
+    const v = clamp((p - .45) / .45);
+    velvet.style.opacity = v;
+    velvet.style.transform = `translateY(${28 * (1 - ease(v))}px)`;
+    cue.style.opacity = p > .02 ? 0 : 1;
+  }
+  function loop(now){
+    const dt = Math.min(64, now - last); last = now;
+    // Suavizado independiente de los fps (60 o 120 Hz se sienten igual)
+    current += (target - current) * (1 - Math.pow(1 - .16, dt / 16.7));
+    if (Math.abs(target - current) < .0005) current = target;
+    render(current);
+    litWords();
+    if (current !== target) requestAnimationFrame(loop); else running = false;
+  }
+  function kick(){ readTarget(); if (!running){ running = true; last = performance.now(); requestAnimationFrame(loop); } }
+
+  // Frase: se enciende según cuánto ha subido la sección
+  function litWords(){
+    const m = man.getBoundingClientRect(), vh = innerHeight;
+    const q = clamp((vh * .85 - m.top) / (vh * .75));
+    const lit = Math.round(q * words.length);
+    words.forEach((w,i)=>w.classList.toggle("on", i < lit));
+  }
+  addEventListener("scroll", kick, {passive:true});
+  addEventListener("resize", kick);
+  readTarget(); current = target; render(current); litWords();
+
+  // Fondo difuminado: se copia el video a un lienzo de 64×36 px unas 15 veces
+  // por segundo; el CSS lo agranda y desenfoca. Mucho más liviano que un
+  // segundo video con blur.
+  const blur = document.getElementById("blur"), bctx = blur.getContext("2d");
+  let lastDraw = 0, heroVisible = true;
+  function paintBlur(now){
+    if (heroVisible && media.readyState >= 2 && now - lastDraw > 66) { bctx.drawImage(media, 0, 0, 64, 36); lastDraw = now; }
+    requestAnimationFrame(paintBlur);
+  }
+  if (media.tagName === "VIDEO") requestAnimationFrame(paintBlur);
+
+  // El video solo corre mientras se ve (ahorra batería y datos en celular)
+  if (media.tagName === "VIDEO") {
+    new IntersectionObserver(([en])=>{ heroVisible = en.isIntersecting; en.isIntersecting ? media.play().catch(()=>{}) : media.pause(); }).observe(stage);
+  }
+})();
+</script>
+</body>
+</html>

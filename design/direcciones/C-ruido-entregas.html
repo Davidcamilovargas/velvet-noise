@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Velvet Noise — Dirección C · Ruido / entregas</title>
+<!--
+  DIRECCIÓN C · RUIDO / ENTREGAS
+  Anclaje: tiendas de streetwear por entregas (drops) y el tema Broadcast de
+  Shopify — tipografía grande y ancha, grilla densa, la colección como evento.
+  Form desde el contenido: el manual de marca habla de "nueva entrega, tres
+  piezas" y de etiquetas (talla, lote, sello) como la única mayúscula permitida.
+  Toda la página se arma como una hoja de etiquetas: cada prenda es una ficha
+  con su gramaje y sus tallas disponibles a la vista.
+  Supuestos: sin umbral de envío gratis; dirección del punto por confirmar;
+  la fecha de la entrega es ilustrativa.
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Bodoni+Moda:ital,opsz,wght@1,6..96,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --black:#000; --silk:#EDEAE4; --wine:#431424; --midnight:#131C33; --burgundy:#8E2440; --ash:#6E6A68;
+  --paper:#EDEAE4; --line:rgba(0,0,0,.16);
+  --ease-out:cubic-bezier(.23,1,.32,1);
+  --gutter:16px;
+}
+@media (min-width:768px){:root{--gutter:28px}}
+*{box-sizing:border-box;margin:0}
+body{font-family:Archivo,"Helvetica Neue",Arial,sans-serif;font-stretch:100%;background:var(--paper);color:var(--black);font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--burgundy);outline-offset:2px}
+.wrap{padding-left:var(--gutter);padding-right:var(--gutter)}
+.wide{font-stretch:125%;font-weight:800;letter-spacing:-.02em;line-height:.9}
+.tag{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase}
+.velvet{font-family:"Bodoni Moda",serif;font-style:italic;font-weight:400;letter-spacing:0}
+
+/* Top: anuncio como cinta de etiqueta */
+.announce{display:flex;justify-content:space-between;gap:16px;background:var(--black);color:var(--paper);padding:8px var(--gutter);font-size:12px}
+.announce span:last-child{display:none}
+@media (min-width:768px){.announce span:last-child{display:inline}}
+
+header{position:sticky;top:0;z-index:30;background:var(--paper);border-bottom:1px solid var(--black)}
+.bar{display:flex;align-items:center;justify-content:space-between;height:56px}
+.logo img{height:38px;width:auto}
+.bar nav{display:flex;align-items:center}
+.btn-txt{min-height:44px;min-width:44px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;font-weight:600;font-size:14px}
+.btn-txt[aria-expanded=true]{text-decoration:underline;text-underline-offset:4px}
+
+/* Menú a pantalla completa, 2 niveles */
+.overlay{position:fixed;inset:0;z-index:45;background:var(--black);color:var(--paper);display:grid;grid-template-rows:auto 1fr auto;
+  clip-path:inset(0 0 100% 0);transition:clip-path .32s cubic-bezier(.77,0,.175,1);visibility:hidden}
+.overlay.open{clip-path:inset(0);visibility:visible}
+.overlay .top{display:flex;justify-content:space-between;align-items:center;height:56px}
+.ov-grid{display:grid;gap:8px;align-content:start;padding-top:24px;overflow-y:auto}
+@media (min-width:900px){.ov-grid{grid-template-columns:1.2fr 1fr;gap:48px;padding-top:56px}}
+.ov-l1{list-style:none;padding:0}
+.ov-l1 button{font-size:clamp(44px,9vw,96px);text-align:left;opacity:.45;transition:opacity .15s;min-height:44px}
+.ov-l1 button[aria-current=true],.ov-l1 button:hover{opacity:1}
+.ov-l2{list-style:none;padding:0;display:grid;gap:2px;align-content:start}
+.ov-l2 a{display:flex;justify-content:space-between;border-bottom:1px solid rgba(237,234,228,.2);padding:14px 0;font-size:18px}
+.ov-l2 a span{color:rgba(237,234,228,.55);font-size:13px}
+.overlay .foot{display:flex;flex-wrap:wrap;gap:16px;padding-bottom:20px;font-size:13px;color:rgba(237,234,228,.7)}
+
+/* Hero: la entrega */
+.drop{display:grid;border-bottom:1px solid var(--black)}
+@media (min-width:1000px){.drop{grid-template-columns:1fr 1fr;min-height:calc(100vh - 92px)}}
+.drop-copy{padding:28px var(--gutter) 32px;display:flex;flex-direction:column;justify-content:space-between;gap:32px}
+@media (min-width:1000px){.drop-copy{border-right:1px solid var(--black);padding-top:40px}}
+.drop h1{font-size:clamp(56px,10.5vw,160px)}
+.drop h1 .velvet{display:block;font-size:.62em;margin-top:.12em;line-height:1}
+.spec{width:100%;border-collapse:collapse;font-size:14px}
+.spec th{text-align:left;font-weight:600;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ash);padding:0 0 8px;border-bottom:1px solid var(--black)}
+.spec td{padding:12px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.spec td:last-child,.spec th:last-child{text-align:right}
+.spec a{font-weight:600}
+.spec small{display:block;color:var(--ash);font-size:12px}
+.go{display:flex;align-items:center;justify-content:space-between;min-height:56px;padding:0 20px;background:var(--black);color:var(--paper);font-weight:700;font-stretch:115%;font-size:16px;transition:transform .16s var(--ease-out)}
+.go:active{transform:scale(.98)}
+.drop-media{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:1px;background:var(--black);min-height:60vh}
+.drop-media img{width:100%;height:100%;object-fit:cover;background:var(--paper)}
+.drop-media img:first-child{grid-row:1/3}
+
+/* Beneficios como etiquetas cosidas */
+.labels{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--black)}
+@media (min-width:900px){.labels{grid-template-columns:repeat(4,1fr)}}
+.labels div{padding:16px var(--gutter);border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.labels b{display:block;font-size:14px;font-stretch:112%}
+.labels span{font-size:13px;color:var(--ash)}
+
+/* Filtro + grilla densa */
+.shop-head{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:16px;padding-top:48px;padding-bottom:16px}
+.shop-head h2{font-size:clamp(40px,6vw,88px)}
+.chips{position:sticky;top:56px;z-index:10;background:var(--paper);display:flex;gap:8px;overflow-x:auto;padding:10px var(--gutter);border-top:1px solid var(--black);border-bottom:1px solid var(--black);scrollbar-width:none}
+.chips button{flex:0 0 auto;min-height:40px;padding:0 16px;border:1px solid var(--black);font-size:13px;font-weight:600;transition:background-color .12s,color .12s}
+.chips button[aria-pressed=true]{background:var(--black);color:var(--paper)}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--black);border-bottom:1px solid var(--black)}
+@media (min-width:900px){.grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.item{background:var(--paper);display:flex;flex-direction:column}
+.item .media{display:block;position:relative;aspect-ratio:4/5;overflow:hidden}
+.item .media img{width:100%;height:100%;object-fit:cover}
+.item .flag{position:absolute;right:0;top:0;background:var(--black);color:var(--paper);font-size:11px;font-weight:700;padding:6px 8px}
+.item .flag.sale{background:var(--burgundy)}
+.item .body{padding:12px;display:grid;gap:6px;flex:1;align-content:start}
+.item .row{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.item .name{font-weight:700;font-stretch:110%;font-size:15px;line-height:1.15;overflow-wrap:anywhere}
+.item .price{font-weight:600;white-space:nowrap}
+.item .price s{display:block;font-weight:400;color:var(--ash);font-size:12px;text-align:right}
+.item .gsm{font-size:12px;color:var(--ash)}
+.item .sizes{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.item .sizes button{min-width:44px;height:44px;border:1px solid var(--line);font-size:13px;font-weight:600;transition:border-color .12s,background-color .12s,color .12s}
+@media (hover:hover){.item .sizes button:hover{border-color:var(--black)}}
+.item .sizes button:active{background:var(--black);color:var(--paper)}
+.empty{grid-column:1/-1;background:var(--paper);padding:48px var(--gutter)}
+
+/* Punto de recogida como sello */
+.stamp{display:grid;gap:24px;padding-top:56px;padding-bottom:56px;border-bottom:1px solid var(--black)}
+@media (min-width:900px){.stamp{grid-template-columns:1.2fr 1fr 1fr;align-items:end}}
+.stamp h2{font-size:clamp(36px,5vw,72px)}
+.stamp dl{display:grid;gap:8px;font-size:14px}
+.stamp dt{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--ash)}
+.ph{border:1px dashed var(--black);display:grid;place-items:center;aspect-ratio:4/3;font-size:13px;color:var(--ash);text-align:center;padding:12px}
+
+.news{background:var(--black);color:var(--paper)}
+.news .wrap{padding-top:56px;padding-bottom:56px;display:grid;gap:24px}
+@media (min-width:900px){.news .wrap{grid-template-columns:1fr 1fr;align-items:end}}
+.news h2{font-size:clamp(36px,5vw,72px)}
+.news form{display:flex;border:1px solid var(--paper)}
+.news input{flex:1;min-height:56px;background:transparent;border:0;color:var(--paper);padding:0 16px;font:inherit;font-size:16px}
+.news input::placeholder{color:rgba(237,234,228,.55)}
+.news button{padding:0 20px;background:var(--paper);color:var(--black);font-weight:700}
+
+footer{padding-top:40px;padding-bottom:28px;font-size:14px}
+.f{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+@media (min-width:900px){.f{grid-template-columns:2fr repeat(3,1fr)}}
+footer ul{list-style:none;padding:0;display:grid;gap:8px;margin-top:10px}
+.legal{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;margin-top:40px;padding-top:16px;border-top:1px solid var(--black);font-size:12px;color:var(--ash)}
+
+.wa{position:fixed;left:var(--gutter);right:var(--gutter);bottom:12px;z-index:40;display:flex;justify-content:space-between;align-items:center;min-height:52px;padding:0 18px;background:var(--black);color:var(--paper);font-weight:700;margin-bottom:env(safe-area-inset-bottom);transition:transform .25s var(--ease-out)}
+@media (min-width:768px){.wa{left:auto;width:300px}}
+.wa.hide{transform:translateY(140%)}
+.toast{position:fixed;left:50%;top:72px;transform:translate(-50%,-8px);opacity:0;background:var(--black);color:var(--paper);padding:12px 18px;font-size:14px;font-weight:600;transition:opacity .18s,transform .18s var(--ease-out);pointer-events:none;z-index:60}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="announce"><span>Envíos solo en Colombia · desde $12.000</span><span>Recogida gratis en Bogotá · Cambios de talla</span></div>
+
+<header>
+  <div class="wrap bar">
+    <a class="logo" href="#" aria-label="Velvet Noise, inicio"><img src="https://velvetnoise-frontend.onrender.com/brand/logo-principal-black.png" alt=""></a>
+    <nav aria-label="Principal">
+      <button class="btn-txt" id="lang" aria-label="Cambiar idioma">ES/EN</button>
+      <button class="btn-txt" aria-label="Buscar">Buscar</button>
+      <button class="btn-txt" aria-label="Bolsa">Bolsa <span id="count" style="margin-left:4px">0</span></button>
+      <button class="btn-txt" id="open-menu" aria-expanded="false" aria-controls="overlay">Menú</button>
+    </nav>
+  </div>
+</header>
+
+<div class="overlay wrap" id="overlay" aria-hidden="true" role="dialog" aria-label="Menú">
+  <div class="top"><img src="https://velvetnoise-frontend.onrender.com/brand/logo-principal.png" alt="Velvet Noise" style="height:38px"><button class="btn-txt" id="close-menu">Cerrar</button></div>
+  <div class="ov-grid">
+    <ul class="ov-l1" id="l1"></ul>
+    <ul class="ov-l2" id="l2"></ul>
+  </div>
+  <div class="foot"><span>WhatsApp</span><span>Envíos y cambios</span><span>Recoger en Bogotá</span></div>
+</div>
+
+<main>
+  <section class="drop">
+    <div class="drop-copy">
+      <div>
+        <span class="tag" style="color:var(--ash)">Entrega · octubre 2026</span>
+        <h1 class="wide" style="margin-top:16px">Tres<br>piezas.<span class="velvet">por dentro, terciopelo.</span></h1>
+      </div>
+      <div>
+        <table class="spec" aria-label="Piezas de la entrega"><thead><tr><th>Pieza</th><th>Tallas</th><th>Precio</th></tr></thead><tbody id="spec"></tbody></table>
+        <a class="go" href="#" style="margin-top:20px"><span>Ver la entrega</span><span aria-hidden="true">3 piezas</span></a>
+      </div>
+    </div>
+    <div class="drop-media" id="drop-media"></div>
+  </section>
+
+  <div class="labels" aria-label="Beneficios">
+    <div><b>Envíos a Colombia</b><span>3-5 días · $12.000</span></div>
+    <div><b>Express</b><span>1-2 días · $25.000</span></div>
+    <div><b>Recoge en Bogotá</b><span>Sin costo</span></div>
+    <div><b>Cambios de talla</b><span>Sin usar ni lavar</span></div>
+  </div>
+
+  <div class="wrap shop-head"><h2 class="wide">Todo</h2><span class="tag" style="color:var(--ash)" id="n-items"></span></div>
+  <div class="chips" role="group" aria-label="Filtrar por categoría" id="chips"></div>
+  <section class="grid" id="grid" aria-live="polite"></section>
+
+  <section class="wrap stamp">
+    <h2 class="wide">Recoge<br>en Bogotá.</h2>
+    <dl>
+      <div><dt>Dirección</dt><dd>Por confirmar</dd></div>
+      <div><dt>Horario</dt><dd>Lunes a viernes, 8:00 a.m. – 6:00 p.m.</dd></div>
+      <div><dt>Costo</dt><dd>$0. Elige "Recoger en tienda" al pagar.</dd></div>
+    </dl>
+    <div class="ph">Foto del punto (pendiente)</div>
+  </section>
+
+  <section class="news">
+    <div class="wrap">
+      <h2 class="wide">Próxima<br>entrega.</h2>
+      <form onsubmit="event.preventDefault();toast('Anotado. Te avisamos.')">
+        <label for="m" style="position:absolute;left:-9999px">Correo</label>
+        <input id="m" type="email" required placeholder="tu@correo.com" autocomplete="email">
+        <button>Avisarme</button>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">
+  <div class="f">
+    <div><img src="https://velvetnoise-frontend.onrender.com/brand/logo-principal-black.png" alt="Velvet Noise" style="height:44px"></div>
+    <div><span class="tag">Tienda</span><ul><li><a href="#">Todo</a></li><li><a href="#">Entregas anteriores</a></li><li><a href="#">Guía de tallas</a></li></ul></div>
+    <div><span class="tag">Ayuda</span><ul><li><a href="#">Envíos y cambios</a></li><li><a href="#">WhatsApp</a></li><li><a href="#">Mis pedidos</a></li></ul></div>
+    <div><span class="tag">Legal</span><ul><li><a href="#">Términos</a></li><li><a href="#">Privacidad</a></li></ul></div>
+  </div>
+  <div class="legal"><span>© 2026 Velvet Noise · Bogotá</span><span>Tarjeta, PSE y Nequi vía Wompi</span></div>
+</footer>
+
+<a class="wa" href="#" id="wa"><span>¿Dudas con la talla?</span><span>WhatsApp</span></a>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="productos.js"></script>
+<script>
+const P=window.VN_PRODUCTS, by=n=>P.find(p=>p.name===n), fmt=n=>"$"+n.toLocaleString("es-CO");
+const spec=p=>{const m=p.desc.match(/(\d+)\s?(g|oz)\b/);return m?m[0]:p.desc.split(/[.,]/)[0]};
+
+// Entrega
+const drop=["Hoodie Terciopelo 450","Jean Recto Crudo","Bomber Satinada"].map(by);
+document.getElementById("spec").innerHTML=drop.map(p=>`<tr><td><a href="#">${p.name}</a><small>${p.desc.split(". ")[0]}</small></td><td>${p.sizes.join(" ")||"Única"}</td><td>${fmt(p.price)}</td></tr>`).join("");
+document.getElementById("drop-media").innerHTML=[by("Jean Recto Crudo").img[0],by("Hoodie Terciopelo 450").img[0],by("Bomber Satinada").img[0]].map((u,i)=>`<img src="${u}" alt="${drop[[1,0,2][i]].name}" ${i?'loading="lazy"':""}>`).join("");
+
+// Grilla con filtro (sirve también para probar 0 resultados)
+const CATS=["Todo","Camisetas","Sudaderas","Chaquetas","Pantalones","Accesorios","Ofertas"];let cur="Todo";
+const chips=document.getElementById("chips");
+chips.innerHTML=CATS.map(c=>`<button aria-pressed="${c===cur}">${c}</button>`).join("");
+chips.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;cur=b.textContent;chips.querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b));render()});
+function render(){
+  const list=P.filter(p=>cur==="Todo"||(cur==="Ofertas"?p.compare:p.cat===cur));
+  document.getElementById("n-items").textContent=`${list.length} piezas`;
+  document.getElementById("grid").innerHTML=list.length?list.map(p=>{const off=p.compare?Math.round((1-p.price/p.compare)*100):0;const sold=p.stock<=0;
+    return `<article class="item"><a href="#" class="media" aria-label="${p.name}"><img src="${p.img[0]}" alt="${p.name}" loading="lazy" decoding="async">${sold?'<span class="flag">Agotado</span>':off?`<span class="flag sale">−${off}%</span>`:""}</a>
+    <div class="body"><div class="row"><a href="#" class="name">${p.name}</a><span class="price">${fmt(p.price)}${p.compare?`<s>${fmt(p.compare)}</s>`:""}</span></div>
+    <span class="gsm">${spec(p)}</span>
+    ${sold?'<span class="gsm">Se repone cuando se acaba.</span>':`<div class="sizes" aria-label="Agregar talla">${(p.sizes.length?p.sizes:["Única"]).map(s=>`<button data-add="${p.name}" data-size="${s}" aria-label="Agregar ${p.name} talla ${s}">${s}</button>`).join("")}</div>`}</div></article>`}).join("")
+    :`<div class="empty"><p class="wide" style="font-size:40px">Nada aquí.</p><p style="margin-top:8px;color:var(--ash)">No hay piezas en esta categoría ahora. <button style="text-decoration:underline" onclick="chips.querySelector('button').click()">Ver todo</button></p></div>`;
+}
+render();
+
+// Menú a pantalla completa
+const L={"Ropa":["Camisetas","Sudaderas","Chaquetas","Pantalones"],"Entregas":["Octubre 2026","Anteriores","Básicos"],"Accesorios":["Gorras y gorros","Bolsos","Medias"]};
+const l1=document.getElementById("l1"),l2=document.getElementById("l2");
+l1.innerHTML=Object.keys(L).map((k,i)=>`<li><button class="wide" aria-current="${i===0}">${k}</button></li>`).join("");
+function showL2(k){l2.innerHTML=L[k].map(x=>{const n=P.filter(p=>p.cat===x).length;return `<li><a href="#">${x}${n?`<span>${n}</span>`:""}</a></li>`}).join("")}
+showL2("Ropa");
+l1.addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;l1.querySelectorAll("button").forEach(x=>x.setAttribute("aria-current",x===b));showL2(b.textContent)});
+const ov=document.getElementById("overlay"),om=document.getElementById("open-menu");
+om.addEventListener("click",()=>{ov.classList.add("open");ov.setAttribute("aria-hidden","false");om.setAttribute("aria-expanded","true");document.getElementById("close-menu").focus()});
+function closeOv(){ov.classList.remove("open");ov.setAttribute("aria-hidden","true");om.setAttribute("aria-expanded","false");om.focus()}
+document.getElementById("close-menu").addEventListener("click",closeOv);
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&ov.classList.contains("open"))closeOv()});
+
+let n=0;document.addEventListener("click",e=>{const b=e.target.closest("[data-add]");if(!b)return;n++;document.getElementById("count").textContent=n;toast(`${b.dataset.add} · ${b.dataset.size} — en la bolsa`)});
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("show");clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove("show"),2000)}
+// La barra de WhatsApp se esconde al llegar al footer para no tapar enlaces.
+new IntersectionObserver(([e])=>document.getElementById("wa").classList.toggle("hide",e.isIntersecting)).observe(document.querySelector("footer"));
+</script>
+</body>
+</html>

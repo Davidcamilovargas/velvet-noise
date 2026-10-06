@@ -98,6 +98,11 @@ services:
         sync: false
       - key: VITE_CONTACT_EMAIL
         sync: false
+      # Video y portada del hero de la Home. Vacías = clip de muestra.
+      - key: VITE_HERO_VIDEO_URL
+        sync: false
+      - key: VITE_HERO_POSTER_URL
+        sync: false
     routes:
       # SPA routing: cualquier ruta que no sea un archivo real cae en
       # index.html, para que /shop/producto-x funcione al recargar.
