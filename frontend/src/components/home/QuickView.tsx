@@ -15,11 +15,9 @@ import { COLOR_SWATCH, colorsOf, findVariant, sizesOf } from "../../utils/varian
 export function QuickView({
   product,
   onClose,
-  onAdded,
 }: {
   product: Product | null;
   onClose: () => void;
-  onAdded: (message: string) => void;
 }) {
   const open = !!product;
   const addToCart = useAddToCart();
@@ -79,10 +77,9 @@ export function QuickView({
     setSaving(true);
     const result = await addToCart(p, variant, qty);
     setSaving(false);
-    if (result.ok) {
-      onAdded(`${p.name}${size ? ` · talla ${size}` : ""} — en tu carrito`);
-      onClose();
-    } else setError(result.message);
+    // Al agregar se abre el carrito lateral (useAddToCart); aquí solo se cierra.
+    if (result.ok) onClose();
+    else setError(result.message);
   }
 
   const wa = p ? whatsappLink(`Hola, tengo una pregunta sobre ${p.name}${size ? ` talla ${size}` : ""}.`) : null;

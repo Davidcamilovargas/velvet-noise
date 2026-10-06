@@ -1,312 +1,112 @@
-import { useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { useCartStore } from "../store/cart.store";
-import {
-  applyBackendCoupon,
-  getBackendCart,
-  removeBackendCartItem,
-  removeBackendCoupon,
-  updateBackendCartItem,
-  type BackendCart,
-} from "../services/cart.service";
-import { getApiErrorMessage } from "../services/api";
-import { optimizedImage } from "../utils/image";
-import { formatCurrency } from "../utils/format";
-import { Button } from "../components/ui/Button";
-import { Input } from "../components/ui/Input";
-import { Alert } from "../components/ui/Alert";
-import { EmptyState } from "../components/ui/EmptyState";
+import { useCart } from "../hooks/useCart";
 import { useSEO } from "../hooks/useSEO";
+import { formatCurrency } from "../utils/format";
+import { CartLines, ShippingNote } from "../components/cart/CartLines";
+import { Alert } from "../components/ui/Alert";
 
 export default function Cart() {
-  useSEO({ title: "Carrito de compras", noindex: true });
-  const { user } = useAuth();
-  return user ? <AuthenticatedCart /> : <GuestCart />;
-}
-
-/** Carrito de invitado: 100% local (Zustand + localStorage), sin llamadas al backend. */
-function GuestCart() {
+  useSEO({ title: "Carrito", noindex: true });
   const navigate = useNavigate();
-  const { lines, updateQuantity, removeItem, subtotal } = useCartStore();
-
-  if (lines.length === 0) {
-    return (
-      <div className="mx-auto max-w-xl px-4 py-16">
-        <EmptyState title="Tu carrito está vacío" description="Explora la tienda y encuentra algo que te guste." />
-        <div className="mt-6 text-center">
-          <Link to="/shop" className="text-sm text-velvet-black/70 transition hover:text-velvet-black">
-            Ir a la tienda
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
-      <h1 className="font-display text-3xl text-velvet-black">Carrito</h1>
-      <div className="mt-6">
-        <Alert variant="info">
-          Estás comprando como invitado.{" "}
-          <Link to="/login" className="font-semibold underline">
-            Inicia sesión
-          </Link>{" "}
-          para guardar tu carrito y ver tus pedidos.
-        </Alert>
-      </div>
-
-      <div className="mt-6 space-y-4">
-        {lines.map((line) => (
-          <div key={`${line.productId}-${line.variantId}`} className="flex items-center gap-4 border border-velvet-black/10 p-4">
-            <div className="h-20 w-20 shrink-0 overflow-hidden bg-velvet-silk">
-              {line.imageUrl && (
-                <img src={optimizedImage(line.imageUrl, 200)} alt={line.name} loading="lazy" className="h-full w-full object-cover" />
-              )}
-            </div>
-            <div className="flex-1">
-              <Link to={`/product/${line.slug}`} className="text-sm text-velvet-black transition hover:text-velvet-black/70">
-                {line.name}
-              </Link>
-              {line.variantLabel && <p className="text-xs text-velvet-ash">{line.variantLabel}</p>}
-              <p className="mt-1 text-sm text-velvet-black/80">{formatCurrency(line.unitPrice)}</p>
-            </div>
-            <QuantityStepper
-              quantity={line.quantity}
-              max={line.stockAtAdd}
-              onChange={(q) => updateQuantity(line.productId, line.variantId, q)}
-            />
-            <button
-              onClick={() => removeItem(line.productId, line.variantId)}
-              className="text-xs uppercase tracking-label text-velvet-ash transition hover:text-red-600"
-            >
-              Eliminar
-            </button>
-          </div>
-        ))}
-      </div>
-
-      <CartSummary subtotal={subtotal()} onCheckout={() => navigate("/checkout")} />
-    </div>
-  );
-}
-
-/** Carrito autenticado: el backend es la fuente de verdad (ver Fase 8, docs/03-api.md). */
-function AuthenticatedCart() {
-  const navigate = useNavigate();
-  const setBackendItemCount = useCartStore((s) => s.setBackendItemCount);
-  const [cart, setCart] = useState<BackendCart | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [couponInput, setCouponInput] = useState("");
-  const [couponLoading, setCouponLoading] = useState(false);
-
-  function applyCartUpdate(updated: BackendCart) {
-    setCart(updated);
-    setBackendItemCount(updated.items.reduce((sum, i) => sum + i.quantity, 0));
-  }
+  const cart = useCart();
+  const [coupon, setCoupon] = useState("");
+  const [applying, setApplying] = useState(false);
+  const { refresh } = cart;
 
   useEffect(() => {
-    getBackendCart()
-      .then(applyCartUpdate)
-      .catch((err) => setError(getApiErrorMessage(err)))
-      .finally(() => setIsLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    refresh();
+  }, [refresh]);
 
-  async function handleQuantityChange(itemId: string, quantity: number) {
-    setError(null);
-    try {
-      applyCartUpdate(await updateBackendCartItem(itemId, quantity));
-    } catch (err) {
-      setError(getApiErrorMessage(err));
-    }
+  async function onCoupon(e: FormEvent) {
+    e.preventDefault();
+    if (!coupon.trim()) return;
+    setApplying(true);
+    await cart.applyCoupon(coupon.trim().toUpperCase());
+    setApplying(false);
+    setCoupon("");
   }
 
-  async function handleRemove(itemId: string) {
-    setError(null);
-    try {
-      applyCartUpdate(await removeBackendCartItem(itemId));
-    } catch (err) {
-      setError(getApiErrorMessage(err));
-    }
+  if (cart.isLoading && cart.lines.length === 0) {
+    return <div className="vn-home min-h-[60vh] px-4 py-16 text-center text-velvet-ash">Cargando carrito…</div>;
   }
 
-  async function handleApplyCoupon() {
-    if (!couponInput.trim()) return;
-    setCouponLoading(true);
-    setError(null);
-    try {
-      applyCartUpdate(await applyBackendCoupon(couponInput.trim()));
-      setCouponInput("");
-    } catch (err) {
-      setError(getApiErrorMessage(err));
-    } finally {
-      setCouponLoading(false);
-    }
-  }
-
-  async function handleRemoveCoupon() {
-    setError(null);
-    try {
-      applyCartUpdate(await removeBackendCoupon());
-    } catch (err) {
-      setError(getApiErrorMessage(err));
-    }
-  }
-
-  if (isLoading) {
-    return <div className="mx-auto max-w-4xl px-4 py-16 text-center text-velvet-ash">Cargando carrito…</div>;
-  }
-
-  if (!cart || cart.items.length === 0) {
+  if (cart.lines.length === 0) {
     return (
-      <div className="mx-auto max-w-xl px-4 py-16">
-        <EmptyState title="Tu carrito está vacío" description="Explora la tienda y encuentra algo que te guste." />
-        <div className="mt-6 text-center">
-          <Link to="/shop" className="text-sm text-velvet-black/70 transition hover:text-velvet-black">
-            Ir a la tienda
-          </Link>
-        </div>
+      <div className="vn-home min-h-[60vh] px-[var(--gutter)] py-16">
+        <h1 className="vn-wide text-[clamp(48px,9vw,140px)]">Vacío.</h1>
+        <p className="mt-4 text-velvet-ash">Tu carrito no tiene nada todavía.</p>
+        <Link to="/shop" className="vn-cta mt-8 flex max-w-xs items-center justify-center">Ver el catálogo</Link>
       </div>
     );
   }
 
-  return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
-      <h1 className="font-display text-3xl text-velvet-black">Carrito</h1>
-      {error && (
-        <div className="mt-4">
-          <Alert variant="error">{error}</Alert>
-        </div>
-      )}
+  const total = cart.subtotal - cart.discount;
 
-      <div className="mt-6 space-y-4">
-        {cart.items.map((item) => (
-          <div key={item.id} className="flex items-center gap-4 border border-velvet-black/10 p-4">
-            <div className="flex-1">
-              <Link to={`/product/${item.productSlug}`} className="text-sm text-velvet-black transition hover:text-velvet-black/70">
-                {item.productName}
-              </Link>
-              {item.variantLabel && <p className="text-xs text-velvet-ash">{item.variantLabel}</p>}
-              <p className="mt-1 text-sm text-velvet-black/80">{formatCurrency(item.unitPrice)}</p>
-              {item.exceedsStock && (
-                <p className="mt-1 text-xs text-red-600">Solo quedan {item.stock} unidades disponibles.</p>
+  return (
+    <div className="vn-home min-h-screen">
+      <div className="vn-shop-head !pt-10">
+        <h1 className="vn-wide text-[clamp(48px,9vw,140px)]">Carrito</h1>
+        <span className="vn-tag text-velvet-ash">
+          {cart.count} {cart.count === 1 ? "prenda" : "prendas"}
+        </span>
+      </div>
+
+      <div className="grid gap-10 border-t border-black px-[var(--gutter)] pb-16 pt-2 lg:grid-cols-[1fr_380px]">
+        <div>
+          {cart.error && <div className="mt-4"><Alert variant="error">{cart.error}</Alert></div>}
+          <CartLines lines={cart.lines} onQuantity={cart.setQuantity} onRemove={cart.remove} large />
+        </div>
+
+        <aside className="lg:sticky lg:top-[calc(var(--hdr,96px)+16px)] lg:self-start">
+          <div className="border border-black p-5">
+            <h2 className="vn-tag">Resumen</h2>
+            <div className="mt-4 space-y-2 text-sm">
+              <div className="flex justify-between"><span>Subtotal</span><span>{formatCurrency(cart.subtotal)}</span></div>
+              {cart.discount > 0 && (
+                <div className="flex justify-between">
+                  <span>Descuento {cart.couponCode && `(${cart.couponCode})`}</span>
+                  <span>−{formatCurrency(cart.discount)}</span>
+                </div>
               )}
+              <div className="flex justify-between text-velvet-ash"><span>Envío</span><span>Al pagar</span></div>
             </div>
-            <QuantityStepper quantity={item.quantity} max={item.stock} onChange={(q) => handleQuantityChange(item.id, q)} />
-            <button
-              onClick={() => handleRemove(item.id)}
-              className="text-xs uppercase tracking-label text-velvet-ash transition hover:text-red-600"
-            >
-              Eliminar
+            <div className="mt-4 flex items-baseline justify-between border-t border-black/15 pt-4">
+              <span className="font-semibold">Total</span>
+              <span className="text-2xl font-semibold">{formatCurrency(total)}</span>
+            </div>
+            <p className="text-xs text-velvet-ash">IVA incluido.</p>
+
+            {cart.isGuest ? (
+              <p className="mt-4 text-sm text-velvet-ash">¿Tienes un cupón? Lo aplicas en el checkout.</p>
+            ) : cart.couponCode ? (
+              <div className="mt-4 flex items-center justify-between border border-black/15 px-3 py-2 text-sm">
+                <span>
+                  Cupón <b>{cart.couponCode}</b>
+                  {cart.couponError && <span className="block text-red-700">{cart.couponError}</span>}
+                </span>
+                <button onClick={cart.removeCoupon} className="min-h-[44px] px-1 underline underline-offset-4">Quitar</button>
+              </div>
+            ) : (
+              <form onSubmit={onCoupon} className="mt-4 flex gap-2">
+                <label htmlFor="vn-coupon" className="sr-only">Código de cupón</label>
+                <input id="vn-coupon" value={coupon} onChange={(e) => setCoupon(e.target.value)} placeholder="Código de cupón" className="vn-input !min-h-[44px] flex-1 uppercase" autoCapitalize="characters" />
+                <button className="min-h-[44px] border border-black px-4 text-sm font-semibold" disabled={applying}>
+                  {applying ? "…" : "Aplicar"}
+                </button>
+              </form>
+            )}
+
+            <div className="mt-4"><ShippingNote /></div>
+            <button className="vn-cta" disabled={cart.hasStockIssue} onClick={() => navigate("/checkout")}>
+              Ir a pagar
             </button>
+            {cart.hasStockIssue && <p className="mt-2 text-sm text-red-700">Ajusta las cantidades marcadas para continuar.</p>}
+            <Link to="/shop" className="mt-3 flex min-h-[44px] items-center justify-center text-sm underline underline-offset-4">
+              Seguir comprando
+            </Link>
           </div>
-        ))}
-      </div>
-
-      {/* CUPÓN */}
-      <div className="mt-6 flex items-end gap-2">
-        {cart.couponCode ? (
-          <div className="flex flex-1 items-center justify-between border border-emerald-500 bg-emerald-50 px-4 py-2.5">
-            <span className="text-sm text-emerald-700">
-              Cupón <strong>{cart.couponCode}</strong> aplicado
-              {cart.couponError && <span className="ml-2 text-red-600">— {cart.couponError}</span>}
-            </span>
-            <button onClick={handleRemoveCoupon} className="text-xs uppercase tracking-label text-velvet-ash transition hover:text-red-600">
-              Quitar
-            </button>
-          </div>
-        ) : (
-          <>
-            <Input
-              label="Código de cupón"
-              value={couponInput}
-              onChange={(e) => setCouponInput(e.target.value)}
-              placeholder="BIENVENIDO10"
-              className="flex-1"
-            />
-            <Button variant="secondary" onClick={handleApplyCoupon} isLoading={couponLoading}>
-              Aplicar
-            </Button>
-          </>
-        )}
-      </div>
-
-      <CartSummary
-        subtotal={cart.subtotal}
-        discount={cart.discountTotal}
-        tax={cart.taxTotal}
-        total={cart.total}
-        onCheckout={() => navigate("/checkout")}
-        checkoutDisabled={cart.items.some((i) => i.exceedsStock)}
-      />
-    </div>
-  );
-}
-
-function QuantityStepper({ quantity, max, onChange }: { quantity: number; max: number; onChange: (q: number) => void }) {
-  return (
-    <div className="flex items-center border border-velvet-black/30">
-      <button onClick={() => onChange(Math.max(1, quantity - 1))} className="px-3 py-1.5 text-velvet-black/70 transition hover:text-velvet-black">
-        −
-      </button>
-      <span className="w-8 text-center text-sm text-velvet-black">{quantity}</span>
-      <button
-        onClick={() => onChange(Math.min(max, quantity + 1))}
-        disabled={quantity >= max}
-        className="px-3 py-1.5 text-velvet-black/70 transition hover:text-velvet-black disabled:opacity-30"
-      >
-        +
-      </button>
-    </div>
-  );
-}
-
-function CartSummary({
-  subtotal,
-  discount = 0,
-  tax = 0,
-  total,
-  onCheckout,
-  checkoutDisabled,
-}: {
-  subtotal: number;
-  discount?: number;
-  tax?: number;
-  total?: number;
-  onCheckout?: () => void;
-  checkoutDisabled?: boolean;
-}) {
-  return (
-    <div className="mt-8 ml-auto max-w-sm border border-velvet-black/10 bg-velvet-silk/40 p-6">
-      <div className="flex justify-between text-sm text-velvet-black/70">
-        <span>Subtotal</span>
-        <span>{formatCurrency(subtotal)}</span>
-      </div>
-      {discount > 0 && (
-        <div className="mt-1 flex justify-between text-sm text-emerald-600">
-          <span>Descuento</span>
-          <span>-{formatCurrency(discount)}</span>
-        </div>
-      )}
-      <div className="mt-1 flex justify-between text-sm text-velvet-ash">
-        <span>Envío</span>
-        <span>Se calcula en el checkout</span>
-      </div>
-      <div className="mt-3 flex justify-between border-t border-velvet-black/10 pt-3 text-base font-semibold text-velvet-black">
-        <span>Total</span>
-        <span>{formatCurrency(total ?? subtotal)}</span>
-      </div>
-      {tax > 0 && <p className="mt-1 text-right text-xs text-velvet-ash">Incluye {formatCurrency(tax)} de IVA</p>}
-
-      <div className="mt-5 flex flex-col gap-3">
-        <Button onClick={onCheckout} disabled={!onCheckout || checkoutDisabled} className="w-full">
-          Ir al checkout
-        </Button>
-        <Link to="/shop" className="text-center text-sm text-velvet-black/70 transition hover:text-velvet-black">
-          Continuar comprando
-        </Link>
+        </aside>
       </div>
     </div>
   );

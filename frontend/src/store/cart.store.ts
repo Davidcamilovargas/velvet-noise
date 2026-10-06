@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Product, ProductVariant } from "../types/api";
+import type { BackendCart } from "../services/cart.service";
 
 export interface CartLine {
   productId: string;
@@ -31,6 +32,14 @@ interface CartState {
   // duplicar toda la forma del carrito del backend en este store local.
   backendItemCount: number | null;
   setBackendItemCount: (count: number | null) => void;
+  // Carrito del backend (con sesión), compartido entre el carrito lateral,
+  // la página /cart y el checkout para que todos muestren lo mismo.
+  backendCart: BackendCart | null;
+  setBackendCart: (cart: BackendCart | null) => void;
+  // Carrito lateral
+  drawerOpen: boolean;
+  openDrawer: () => void;
+  closeDrawer: () => void;
 }
 
 function variantLabel(variant?: ProductVariant): string | null {
@@ -99,6 +108,14 @@ export const useCartStore = create<CartState>()(
 
       backendItemCount: null,
       setBackendItemCount: (count) => set({ backendItemCount: count }),
+
+      backendCart: null,
+      setBackendCart: (cart) =>
+        set({ backendCart: cart, backendItemCount: cart ? cart.items.reduce((sum, i) => sum + i.quantity, 0) : null }),
+
+      drawerOpen: false,
+      openDrawer: () => set({ drawerOpen: true }),
+      closeDrawer: () => set({ drawerOpen: false }),
     }),
     {
       name: "velvet-noise-cart",

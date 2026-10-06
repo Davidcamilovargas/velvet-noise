@@ -31,6 +31,7 @@ export function Header() {
   const backendItemCount = useCartStore((s) => s.backendItemCount);
   // Autenticado: el contador real vive en el backend. Invitado: en el store local.
   const totalItems = user ? backendItemCount ?? 0 : localTotalItems;
+  const openDrawer = useCartStore((s) => s.openDrawer);
 
   useEffect(() => {
     fetchCategories()
@@ -176,14 +177,20 @@ export function Header() {
               )}
             </div>
 
-            <Link to="/cart" className="relative text-velvet-black/80 transition hover:text-velvet-black" aria-label="Carrito">
+            <button
+              type="button"
+              onClick={openDrawer}
+              className="relative flex h-11 w-11 items-center justify-center text-velvet-black/80 transition hover:text-velvet-black"
+              aria-label={`Abrir carrito${totalItems ? `, ${totalItems} ${totalItems === 1 ? "prenda" : "prendas"}` : ""}`}
+              aria-haspopup="dialog"
+            >
               <CartIcon />
               {totalItems > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-velvet-burgundy text-[10px] font-semibold text-white">
+                <span className="absolute right-0.5 top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-velvet-burgundy text-[10px] font-semibold text-white">
                   {totalItems}
                 </span>
               )}
-            </Link>
+            </button>
 
             {user ? (
               <div className="hidden items-center gap-4 sm:flex">

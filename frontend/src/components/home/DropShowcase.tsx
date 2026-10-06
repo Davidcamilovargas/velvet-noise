@@ -13,7 +13,7 @@ const clamp = (v: number) => Math.min(1, Math.max(0, v));
  * piezas se deslizan de lado con inercia. En celular (o con movimiento
  * reducido) es un carrusel normal que se desliza con el dedo.
  */
-export function DropShowcase({ products, onAdded }: { products: Product[]; onAdded: (m: string) => void }) {
+export function DropShowcase({ products }: { products: Product[] }) {
   const secRef = useRef<HTMLElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const barRef = useRef<HTMLElement>(null);
@@ -111,7 +111,7 @@ export function DropShowcase({ products, onAdded }: { products: Product[]; onAdd
         </div>
         <div ref={trackRef} className="vn-track">
           {products.map((p, i) => (
-            <Piece key={p.id} product={p} index={i} total={total} active={i === active} onAdded={onAdded} />
+            <Piece key={p.id} product={p} index={i} total={total} active={i === active} />
           ))}
         </div>
       </div>
@@ -124,13 +124,11 @@ function Piece({
   index,
   total,
   active,
-  onAdded,
 }: {
   product: Product;
   index: number;
   total: number;
   active: boolean;
-  onAdded: (m: string) => void;
 }) {
   const addToCart = useAddToCart();
   const colors = colorsOf(p);
@@ -150,8 +148,7 @@ function Piece({
     setSaving(true);
     const r = await addToCart(p, variant, 1);
     setSaving(false);
-    if (r.ok) onAdded(`${p.name}${size ? ` · talla ${size}` : ""} — en tu carrito`);
-    else setError(r.message);
+    if (!r.ok) setError(r.message);
   }
 
   const ready = sizes.length === 0 ? p.stock > 0 : !!size;

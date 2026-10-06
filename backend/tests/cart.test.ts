@@ -102,6 +102,8 @@ describe("Carrito y cupones", () => {
       .send({ productId, variantId, quantity: 2 });
     expect(res.status).toBe(201);
     expect(res.body.data.items[0].quantity).toBe(2);
+    // Cada línea trae su foto (o null si el producto no tiene) para el carrito lateral.
+    expect(res.body.data.items[0]).toHaveProperty("imageUrl");
     expect(res.body.data.subtotal).toBe(20000);
   });
 

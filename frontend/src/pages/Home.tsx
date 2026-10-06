@@ -9,8 +9,6 @@ import { Manifesto } from "../components/home/Manifesto";
 import { DropShowcase } from "../components/home/DropShowcase";
 import { ShopGrid } from "../components/home/ShopGrid";
 import { QuickView } from "../components/home/QuickView";
-import { Toast } from "../components/home/Toast";
-import { useToast } from "../hooks/useToast";
 import "../styles/home.css";
 
 // Dirección "Ruido / entregas" (design/direction-approved.md): hero de video
@@ -34,7 +32,6 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [quick, setQuick] = useState<Product | null>(null);
-  const { message: toast, show: showToast } = useToast();
 
   useEffect(() => {
     let active = true;
@@ -69,7 +66,7 @@ export default function Home() {
       {isLoading ? (
         <div className="flex min-h-[50vh] items-center justify-center bg-black text-sm text-velvet-silk/70">Cargando la entrega…</div>
       ) : (
-        <DropShowcase products={drop} onAdded={showToast} />
+        <DropShowcase products={drop} />
       )}
 
       <div className="vn-labels" aria-label="Beneficios">
@@ -83,9 +80,8 @@ export default function Home() {
 
       {!isLoading && <ShopGrid products={products} categories={categories} onQuickView={setQuick} />}
 
-      <QuickView product={quick} onClose={closeQuick} onAdded={showToast} />
+      <QuickView product={quick} onClose={closeQuick} />
 
-      <Toast message={toast} />
     </div>
   );
 }

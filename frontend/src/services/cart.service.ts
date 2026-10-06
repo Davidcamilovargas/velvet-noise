@@ -5,6 +5,7 @@ export interface BackendCartItem {
   productId: string;
   productName: string;
   productSlug: string;
+  imageUrl: string | null;
   variantId: string | null;
   variantLabel: string | null;
   unitPrice: number;

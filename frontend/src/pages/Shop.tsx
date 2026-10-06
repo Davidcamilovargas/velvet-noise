@@ -4,8 +4,6 @@ import { fetchCategories, fetchProducts } from "../services/product.service";
 import type { Category, Product } from "../types/api";
 import { ProductTile } from "../components/product/ProductTile";
 import { QuickView } from "../components/home/QuickView";
-import { Toast } from "../components/home/Toast";
-import { useToast } from "../hooks/useToast";
 import { Alert } from "../components/ui/Alert";
 import { useDebounce } from "../hooks/useDebounce";
 import { useSEO } from "../hooks/useSEO";
@@ -40,7 +38,6 @@ export default function Shop() {
   const [error, setError] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [quick, setQuick] = useState<Product | null>(null);
-  const { message: toast, show: showToast } = useToast();
 
   const [searchInput, setSearchInput] = useState(params.get("search") ?? "");
   const debouncedSearch = useDebounce(searchInput, 400);
@@ -346,8 +343,7 @@ export default function Shop() {
         </div>
       </div>
 
-      <QuickView product={quick} onClose={() => setQuick(null)} onAdded={showToast} />
-      <Toast message={toast} />
+      <QuickView product={quick} onClose={() => setQuick(null)} />
     </div>
   );
 }

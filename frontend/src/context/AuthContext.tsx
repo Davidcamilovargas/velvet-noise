@@ -23,12 +23,12 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
  * store local para no arrastrar líneas ya sincronizadas.
  */
 async function syncCartAfterLogin(): Promise<void> {
-  const { lines, clear, setBackendItemCount } = useCartStore.getState();
+  const { lines, clear, setBackendCart } = useCartStore.getState();
   try {
     const cart = lines.length
       ? await mergeGuestCartToBackend(lines.map((l) => ({ productId: l.productId, variantId: l.variantId, quantity: l.quantity })))
       : await getBackendCart();
-    setBackendItemCount(cart.items.reduce((sum, i) => sum + i.quantity, 0));
+    setBackendCart(cart);
     clear();
   } catch {
     // Si la sincronización falla (ej. backend momentáneamente no
@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(async () => {
     await authService.logoutRequest();
     setUser(null);
-    useCartStore.getState().setBackendItemCount(null);
+    useCartStore.getState().setBackendCart(null);
   }, []);
 
   return (

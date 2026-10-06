@@ -7,6 +7,7 @@ import { getApiErrorMessage } from "../services/api";
 import type { Product, Review } from "../types/api";
 import { calculateDiscountPercent, formatCurrency, formatDate } from "../utils/format";
 import { useAddToCart } from "../hooks/useAddToCart";
+import { useCartStore } from "../store/cart.store";
 import { useSEO } from "../hooks/useSEO";
 import { useHeaderOffset } from "../hooks/useHeaderOffset";
 import { useReveal } from "../hooks/useReveal";
@@ -16,8 +17,6 @@ import { ZoomableImage } from "../components/product/ZoomableImage";
 import { ImageLightbox } from "../components/product/ImageLightbox";
 import { ProductTile } from "../components/product/ProductTile";
 import { QuickView } from "../components/home/QuickView";
-import { Toast } from "../components/home/Toast";
-import { useToast } from "../hooks/useToast";
 import { optimizedImage } from "../utils/image";
 import { whatsappLink } from "../config/store";
 import { COLOR_SWATCH, colorsOf, findVariant, firstSentence, sizesOf } from "../utils/variants";
@@ -62,7 +61,6 @@ export default function ProductDetail() {
   const [quick, setQuick] = useState<Product | null>(null);
   // Hooks arriba de los return tempranos (cargando / error).
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const { message: toast, show: showToast } = useToast();
 
   const { user } = useAuth();
   const [reviews, setReviews] = useState<Review[] | null>(null);
@@ -216,8 +214,11 @@ export default function ProductDetail() {
     const result = await addToCart(product, selectedVariant, quantity);
     setSaving(false);
     if (!result.ok) return setCartError(result.message);
-    if (goToCheckout) navigate("/checkout");
-    else showToast(`${product.name}${selectedSize ? ` · talla ${selectedSize}` : ""} — en tu carrito`);
+    // "Agregar" abre el carrito lateral (useAddToCart); "Comprar ahora" va directo a pagar.
+    if (goToCheckout) {
+      useCartStore.getState().closeDrawer();
+      navigate("/checkout");
+    }
   }
 
   const ctaLabel = saving ? "Agregando…" : soldOut ? "Agotado" : needsSize && !selectedSize ? "Elige una talla" : !canAdd ? "Agotado en esta talla" : "Agregar al carrito";
@@ -524,8 +525,7 @@ export default function ProductDetail() {
           onNavigate={setLightboxIndex}
         />
       )}
-      <QuickView product={quick} onClose={() => setQuick(null)} onAdded={showToast} />
-      <Toast message={toast} />
+      <QuickView product={quick} onClose={() => setQuick(null)} />
     </div>
   );
 }

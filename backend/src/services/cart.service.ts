@@ -1,6 +1,6 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { db } from "../db/client";
-import { carts, cartItems, products, productVariants, inventory, storeSettings, coupons } from "../db/schema";
+import { carts, cartItems, products, productVariants, productImages, inventory, storeSettings, coupons } from "../db/schema";
 import { AppError } from "../utils/AppError";
 import { evaluateCoupon } from "./coupon.service";
 
@@ -34,6 +34,7 @@ export async function getCart(userId: string) {
       variantColor: productVariants.color,
       variantSize: productVariants.size,
       variantPriceOverride: productVariants.priceOverride,
+      variantImageUrl: productVariants.imageUrl,
       stock: inventory.stock,
     })
     .from(cartItems)
@@ -42,6 +43,19 @@ export async function getCart(userId: string) {
     .leftJoin(inventory, eq(inventory.variantId, cartItems.variantId))
     .where(eq(cartItems.cartId, cart.id));
 
+  // Foto de cada línea: la de la variante si tiene, si no la principal del
+  // producto (para mostrarla en el carrito lateral y en el checkout).
+  const productIds = [...new Set(items.map((i) => i.productId))];
+  const imageRows = productIds.length
+    ? await db
+        .select({ productId: productImages.productId, url: productImages.url })
+        .from(productImages)
+        .where(and(inArray(productImages.productId, productIds), eq(productImages.mediaType, "IMAGE")))
+        .orderBy(desc(productImages.isPrimary), asc(productImages.position))
+    : [];
+  const imageByProduct = new Map<string, string>();
+  for (const row of imageRows) if (!imageByProduct.has(row.productId)) imageByProduct.set(row.productId, row.url);
+
   const lines = items.map((item) => {
     const unitPrice = Number(item.variantPriceOverride ?? item.productPrice);
     return {
@@ -49,6 +63,7 @@ export async function getCart(userId: string) {
       productId: item.productId,
       productName: item.productName,
       productSlug: item.productSlug,
+      imageUrl: item.variantImageUrl ?? imageByProduct.get(item.productId) ?? null,
       sku: item.variantSku ?? item.productSku,
       variantId: item.variantId,
       variantLabel: [item.variantColor, item.variantSize].filter(Boolean).join(" / ") || null,

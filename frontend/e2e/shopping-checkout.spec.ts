@@ -27,13 +27,18 @@ test.describe("Compra sin cuenta (búsqueda → carrito → checkout)", () => {
     await tile.hover();
     await tile.getByRole("button", { name: `Vista rápida de ${fixtures.productName}` }).click();
     await page.getByRole("dialog").getByRole("button", { name: "Agregar al carrito" }).click();
-    await expect(page.getByRole("status")).toContainText("en tu carrito");
 
-    await page.goto("/cart");
-    await expect(page.getByText(fixtures.productName)).toBeVisible();
+    // 3. Se abre el carrito lateral con el producto; de ahí al carrito completo.
+    const drawer = page.getByRole("dialog", { name: /Carrito/ });
+    await expect(drawer).toBeVisible();
+    await expect(drawer.getByText(fixtures.productName)).toBeVisible();
+    await drawer.getByRole("link", { name: "Ver carrito completo" }).click();
+    await expect(page).toHaveURL(/\/cart$/);
+    await expect(page.getByRole("heading", { name: "Carrito" })).toBeVisible();
+    await expect(page.getByRole("main").getByText(fixtures.productName)).toBeVisible();
 
-    // 3. El checkout ya no pide iniciar sesión: pide los datos de contacto.
-    await page.getByRole("button", { name: "Ir al checkout" }).click();
+    // 4. El checkout no pide iniciar sesión: pide los datos de contacto.
+    await page.getByRole("button", { name: "Ir a pagar" }).click();
     await expect(page).toHaveURL(/\/checkout$/);
     await expect(page.getByRole("heading", { name: "Tus datos" })).toBeVisible();
     await page.getByLabel("Nombre").fill("Sofía");
@@ -42,21 +47,21 @@ test.describe("Compra sin cuenta (búsqueda → carrito → checkout)", () => {
     await page.getByLabel("Teléfono").fill("3001234567");
     await page.getByRole("button", { name: "Continuar con el envío" }).click();
 
-    // 4. Con la sesión de invitado abierta, el carrito local pasó al backend y
-    //    se muestra el checkout normal.
-    await expect(page.getByRole("heading", { name: "Método de envío" })).toBeVisible();
-    await expect(page.getByText(fixtures.productName)).toBeVisible();
+    // 5. Con la sesión de invitado abierta, el carrito local pasó al backend y
+    //    se muestra el paso de envío.
+    await expect(page.getByRole("heading", { name: "Envío", exact: true })).toBeVisible();
+    await expect(page.getByRole("main").getByText(fixtures.productName)).toBeVisible();
 
-    // 5. Recoger en tienda: no exige dirección (label real definido en
+    // 6. Recoger en tienda: no exige dirección (label real definido en
     //    backend/src/services/shipping.service.ts).
     await page.getByText("Recoger en tienda (gratis)").click();
     await page.getByRole("button", { name: "Confirmar pedido" }).click();
 
-    // 6. El pedido se crea de verdad en el backend — se navega a su detalle.
+    // 7. El pedido se crea de verdad en el backend — se navega a su detalle.
     await expect(page).toHaveURL(/\/orders\/[0-9a-f-]+$/);
     await expect(page.getByRole("heading", { name: /^Pedido / })).toBeVisible();
 
-    // 7. Aparece también en el historial de pedidos de esa persona.
+    // 8. Aparece también en el historial de pedidos de esa persona.
     await page.goto("/orders");
     await expect(page.getByRole("heading", { name: "Mis pedidos" })).toBeVisible();
     await expect(page.getByText(/^ORD-/)).toBeVisible();

@@ -16,23 +16,25 @@ import type { Product, ProductVariant } from "../types/api";
 export function useAddToCart() {
   const { user } = useAuth();
   const localAddItem = useCartStore((s) => s.addItem);
-  const setBackendItemCount = useCartStore((s) => s.setBackendItemCount);
+  const setBackendCart = useCartStore((s) => s.setBackendCart);
+  const openDrawer = useCartStore((s) => s.openDrawer);
 
   const addToCart = useCallback(
     async (product: Product, variant: ProductVariant | undefined, quantity: number) => {
       if (!user) {
         localAddItem(product, variant, quantity);
+        openDrawer();
         return { ok: true as const };
       }
       try {
-        const cart = await addBackendCartItem(product.id, variant?.id, quantity);
-        setBackendItemCount(cart.items.reduce((sum, i) => sum + i.quantity, 0));
+        setBackendCart(await addBackendCartItem(product.id, variant?.id, quantity));
+        openDrawer();
         return { ok: true as const };
       } catch (err) {
         return { ok: false as const, message: getApiErrorMessage(err) };
       }
     },
-    [user, localAddItem, setBackendItemCount]
+    [user, localAddItem, setBackendCart, openDrawer]
   );
 
   return addToCart;
