@@ -1,5 +1,5 @@
 /** Configuración compartida por los scripts de setup/teardown y las specs E2E. */
-export const API_URL = "http://localhost:4000/api";
+export const API_URL = process.env.E2E_API_URL ?? "http://localhost:4000/api";
 export const APP_URL = "http://localhost:5173";
 
 // Misma base de datos que usa el backend en desarrollo (ver backend/.env) —
@@ -8,7 +8,10 @@ export const APP_URL = "http://localhost:5173";
 // propias filas por sufijo/nombre único. `?schema=public` es una convención
 // de Prisma/Drizzle en la URL del backend que `psql` (libpq) no entiende
 // como parámetro de conexión — se usa la URL sin ese query string.
-export const DATABASE_URL = "postgresql://tienda_user:tienda_pass@localhost:5432/tienda_virtual";
+// La misma base que usa el backend que corre las pruebas (en CI viene del
+// entorno del job; en local, de E2E_DATABASE_URL o DATABASE_URL).
+export const DATABASE_URL =
+  process.env.E2E_DATABASE_URL ?? process.env.DATABASE_URL ?? "postgresql://tienda_user:tienda_pass@localhost:5432/tienda_virtual";
 
 export const FIXTURES_PATH = new URL("./.fixtures.json", import.meta.url).pathname;
 

@@ -134,11 +134,21 @@ export default function Shop() {
       if (!btn) return void (pill.style.width = "0px");
       pill.style.width = `${btn.offsetWidth}px`;
       pill.style.transform = `translateX(${btn.offsetLeft}px)`;
+      // Que la categoría activa quede a la vista si la barra se desliza.
+      const bar = chipsRef.current;
+      if (bar && (btn.offsetLeft < bar.scrollLeft || btn.offsetLeft + btn.offsetWidth > bar.scrollLeft + bar.clientWidth * 0.85)) {
+        bar.scrollLeft = Math.max(0, btn.offsetLeft - 16);
+      }
     };
     move();
     addEventListener("resize", move);
-    document.fonts?.ready.then(move);
-    return () => removeEventListener("resize", move);
+    // Los botones cambian de ancho cuando termina de cargar la tipografía.
+    const ro = new ResizeObserver(move);
+    chipsRef.current?.querySelectorAll("button").forEach((b) => ro.observe(b));
+    return () => {
+      removeEventListener("resize", move);
+      ro.disconnect();
+    };
   }, [category, onSale, categories]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
@@ -234,7 +244,7 @@ export default function Shop() {
                 <div className="vn-skel mt-2 h-3 w-1/2" />
               </div>
             ))
-          : products.map((p, i) => <ProductTile key={p.id} product={p} delay={i % 4} onQuickView={setQuick} onAdded={showToast} />)}
+          : products.map((p, i) => <ProductTile key={p.id} product={p} delay={i % 4} onQuickView={setQuick} />)}
         {!isLoading && products.length === 0 && (
           <div className="col-span-full py-12">
             <p className="vn-wide text-[40px]">Nada aquí.</p>

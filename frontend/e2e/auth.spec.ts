@@ -8,7 +8,8 @@ import { test, expect } from "@playwright/test";
  */
 test.describe("Autenticación", () => {
   test("una visita anónima a una ruta protegida redirige a /login", async ({ page }) => {
-    await page.goto("/checkout");
+    // /checkout ya no es protegida (compra sin cuenta); "Mis pedidos" sí.
+    await page.goto("/orders");
     await expect(page).toHaveURL(/\/login$/);
     await expect(page.getByRole("heading", { name: "Iniciar sesión" })).toBeVisible();
   });

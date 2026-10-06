@@ -16,12 +16,10 @@ export function ShopGrid({
   products,
   categories,
   onQuickView,
-  onAdded,
 }: {
   products: Product[];
   categories: Category[];
   onQuickView: (p: Product) => void;
-  onAdded: (m: string) => void;
 }) {
   const [current, setCurrent] = useState(ALL);
   const [shown, setShown] = useState(ALL);
@@ -52,11 +50,21 @@ export function ShopGrid({
       if (!btn || !pill) return;
       pill.style.width = `${btn.offsetWidth}px`;
       pill.style.transform = `translateX(${btn.offsetLeft}px)`;
+      // Que la categoría activa quede a la vista si la barra se desliza.
+      const bar = chipsRef.current;
+      if (bar && (btn.offsetLeft < bar.scrollLeft || btn.offsetLeft + btn.offsetWidth > bar.scrollLeft + bar.clientWidth * 0.85)) {
+        bar.scrollLeft = Math.max(0, btn.offsetLeft - 16);
+      }
     };
     move();
     addEventListener("resize", move);
-    document.fonts?.ready.then(move);
-    return () => removeEventListener("resize", move);
+    // Los botones cambian de ancho cuando termina de cargar la tipografía.
+    const ro = new ResizeObserver(move);
+    chipsRef.current?.querySelectorAll("button").forEach((b) => ro.observe(b));
+    return () => {
+      removeEventListener("resize", move);
+      ro.disconnect();
+    };
   }, [current, tabs]);
 
   useReveal(gridRef, [list]);
@@ -90,7 +98,7 @@ export function ShopGrid({
       </div>
       <section ref={gridRef} className={`vn-grid${leaving ? " is-leaving" : ""}`} aria-live="polite">
         {list.length > 0 ? (
-          list.map((p, i) => <ProductTile key={p.id} product={p} delay={i % 4} onQuickView={onQuickView} onAdded={onAdded} />)
+          list.map((p, i) => <ProductTile key={p.id} product={p} delay={i % 4} onQuickView={onQuickView} />)
         ) : (
           <div className="col-span-full py-12">
             <p className="vn-wide text-[40px]">Nada aquí.</p>

@@ -74,8 +74,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const guestCheckout = useCallback(async (payload: authService.GuestCheckoutPayload) => {
     const guestUser = await authService.guestCheckoutRequest(payload);
-    setUser(guestUser);
+    // Primero el carrito, después la sesión: el checkout se muestra en cuanto
+    // hay usuario y lee el carrito del backend, así que tiene que estar listo.
     await syncCartAfterLogin();
+    setUser(guestUser);
     return guestUser;
   }, []);
 

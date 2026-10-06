@@ -81,7 +81,7 @@ export default function Home() {
         ))}
       </div>
 
-      {!isLoading && <ShopGrid products={products} categories={categories} onQuickView={setQuick} onAdded={showToast} />}
+      {!isLoading && <ShopGrid products={products} categories={categories} onQuickView={setQuick} />}
 
       <QuickView product={quick} onClose={closeQuick} onAdded={showToast} />
 

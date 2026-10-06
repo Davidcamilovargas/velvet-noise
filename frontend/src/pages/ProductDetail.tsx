@@ -497,7 +497,7 @@ export default function ProductDetail() {
           <h2 className="vn-wide px-[var(--gutter)] pt-16 text-[clamp(40px,6vw,88px)]">También te puede gustar</h2>
           <div ref={relatedRef} className="vn-grid">
             {product.relatedProducts.slice(0, 4).map((p, i) => (
-              <ProductTile key={p.id} product={p} delay={i} onQuickView={setQuick} onAdded={showToast} />
+              <ProductTile key={p.id} product={p} delay={i} onQuickView={setQuick} />
             ))}
           </div>
         </section>

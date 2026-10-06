@@ -34,8 +34,10 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
+        // En CI se usa el Chromium que instala `npx playwright install`. Para usar
+        // otro navegador ya instalado, define PW_CHROMIUM_PATH con su ruta.
         launchOptions: {
-          executablePath: "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
+          ...(process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {}),
           args: ["--no-sandbox"],
         },
       },
