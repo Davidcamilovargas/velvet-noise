@@ -38,6 +38,12 @@ jobs:
       JWT_REFRESH_SECRET: ci-test-refresh-secret-not-for-production
       COOKIE_SECRET: ci-test-cookie-secret-not-for-production
       CORS_ALLOWED_ORIGINS: http://localhost:5173
+      # Valores falsos solo para pruebas: las de pagos calculan las firmas en
+      # local y no se conectan a Wompi. Sin ellos el pago responde 503.
+      WOMPI_PUBLIC_KEY: pub_test_ci_only
+      WOMPI_PRIVATE_KEY: prv_test_ci_only
+      WOMPI_EVENTS_SECRET: test_events_ci_only
+      WOMPI_INTEGRITY_SECRET: test_integrity_ci_only
     defaults:
       run:
         working-directory: backend
